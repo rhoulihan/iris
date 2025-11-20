@@ -1,0 +1,60 @@
+# IRIS Development Dependencies
+# Install with: pip install -r requirements-dev.txt
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+pytest-mock>=3.12.0
+pytest-timeout>=2.2.0
+coverage[toml]>=7.3.0
+
+# Code Quality
+black>=23.11.0
+flake8>=6.1.0
+flake8-docstrings>=1.7.0
+flake8-bugbear>=23.12.0
+mypy>=1.7.0
+isort>=5.12.0
+bandit[toml]>=1.7.5
+
+# Pre-commit Hooks
+pre-commit>=3.5.0
+
+# Type Stubs
+types-redis>=4.6.0
+types-setuptools>=69.0.0
+
+# Documentation
+sphinx>=7.2.0
+sphinx-rtd-theme>=2.0.0
+myst-parser>=2.0.0
+
+# Jupyter and Notebooks
+jupyter>=1.0.0
+jupyterlab>=4.0.0
+ipykernel>=6.26.0
+notebook>=7.0.0
+
+# Data Analysis and Visualization (for exploration)
+matplotlib>=3.8.0
+seaborn>=0.13.0
+plotly>=5.18.0
+
+# Testing Infrastructure
+testcontainers>=3.7.0
+faker>=20.1.0
+
+# Development Utilities
+ipdb>=0.13.13
+ipython>=8.18.0
+python-dotenv>=1.0.0
+
+# Linting Utilities
+pylint>=3.0.0
+pycodestyle>=2.11.0
+pydocstyle>=6.3.0
+
+# Security Scanning
+safety>=2.3.0
+pip-audit>=2.6.0
