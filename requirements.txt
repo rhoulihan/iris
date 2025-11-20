@@ -8,6 +8,7 @@ pydantic>=2.5.0
 # Data & Feature Engineering
 pandas>=2.1.0
 numpy>=1.24.0
+sqlparse>=0.4.4
 
 # Object Storage (MinIO/S3)
 boto3>=1.29.0
