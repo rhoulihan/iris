@@ -7,8 +7,8 @@ Provides unified interface for object storage across different backends:
 """
 
 from abc import ABC, abstractmethod
-from typing import BinaryIO, Optional
 from pathlib import Path
+from typing import BinaryIO
 
 
 class StorageInterface(ABC):
@@ -78,13 +78,13 @@ class LocalFilesystemStorage(StorageInterface):
         """Upload object to local filesystem."""
         target_path = self.base_path / bucket / key
         target_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(target_path, 'wb') as f:
+        with open(target_path, "wb") as f:
             f.write(data.read())
 
     def get_object(self, bucket: str, key: str) -> bytes:
         """Download object from local filesystem."""
         target_path = self.base_path / bucket / key
-        with open(target_path, 'rb') as f:
+        with open(target_path, "rb") as f:
             return f.read()
 
     def delete_object(self, bucket: str, key: str) -> None:
@@ -109,11 +109,7 @@ class LocalFilesystemStorage(StorageInterface):
             return results
         else:
             # Return all files
-            return [
-                str(p.relative_to(bucket_path))
-                for p in bucket_path.rglob("*")
-                if p.is_file()
-            ]
+            return [str(p.relative_to(bucket_path)) for p in bucket_path.rglob("*") if p.is_file()]
 
 
 class MinIOStorage(StorageInterface):
@@ -131,12 +127,12 @@ class MinIOStorage(StorageInterface):
         from botocore.client import Config
 
         self.s3 = boto3.client(
-            's3',
+            "s3",
             endpoint_url=endpoint,
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key,
-            config=Config(signature_version='s3v4'),
-            region_name='us-east-1'
+            config=Config(signature_version="s3v4"),
+            region_name="us-east-1",
         )
 
     def put_object(self, bucket: str, key: str, data: BinaryIO) -> None:
@@ -146,7 +142,7 @@ class MinIOStorage(StorageInterface):
     def get_object(self, bucket: str, key: str) -> bytes:
         """Download object from MinIO."""
         response = self.s3.get_object(Bucket=bucket, Key=key)
-        return response['Body'].read()
+        return bytes(response["Body"].read())
 
     def delete_object(self, bucket: str, key: str) -> None:
         """Delete object from MinIO."""
@@ -155,11 +151,11 @@ class MinIOStorage(StorageInterface):
     def list_objects(self, bucket: str, prefix: str = "") -> list[str]:
         """List objects in MinIO bucket."""
         response = self.s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
-        return [obj['Key'] for obj in response.get('Contents', [])]
+        return [obj["Key"] for obj in response.get("Contents", [])]
 
 
 def get_storage_backend(env: str = "development", **kwargs) -> StorageInterface:
-    """Factory function to get appropriate storage backend.
+    """Get appropriate storage backend for the given environment.
 
     Args:
         env: Environment name (development, testing, production)

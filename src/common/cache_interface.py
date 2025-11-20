@@ -5,9 +5,9 @@ Provides unified interface for in-memory caching across different backends:
 - Oracle TimesTen In-Memory Database (production)
 """
 
+import pickle  # nosec B403
 from abc import ABC, abstractmethod
-from typing import Optional, Any
-import pickle
+from typing import Any, Optional
 
 
 class CacheInterface(ABC):
@@ -72,16 +72,13 @@ class RedisCache(CacheInterface):
         import redis
 
         self.client = redis.Redis(
-            host=host,
-            port=port,
-            db=db,
-            decode_responses=False  # Keep binary mode for pickle
+            host=host, port=port, db=db, decode_responses=False  # Keep binary mode for pickle
         )
 
     def get(self, key: str) -> Optional[Any]:
         """Get value from Redis cache."""
         data = self.client.get(key)
-        return pickle.loads(data) if data else None
+        return pickle.loads(data) if data else None  # nosec B301
 
     def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
         """Set value in Redis cache with optional TTL."""
@@ -121,28 +118,33 @@ class TimesTenCache(CacheInterface):
         """Create cache table if it doesn't exist."""
         with self.connection.cursor() as cursor:
             try:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     CREATE TABLE cache_store (
                         cache_key VARCHAR2(255) PRIMARY KEY,
                         cache_value BLOB,
                         expiry_time TIMESTAMP
                     )
-                """)
+                """
+                )
                 self.connection.commit()
-            except Exception:
-                # Table already exists
+            except Exception:  # nosec B110
+                # Table already exists - this is expected behavior
                 pass
 
     def get(self, key: str) -> Optional[Any]:
         """Get value from TimesTen cache."""
         with self.connection.cursor() as cursor:
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT cache_value FROM cache_store
                 WHERE cache_key = :key
                 AND (expiry_time IS NULL OR expiry_time > SYSTIMESTAMP)
-            """, key=key)
+            """,
+                key=key,
+            )
             row = cursor.fetchone()
-            return pickle.loads(row[0].read()) if row else None
+            return pickle.loads(row[0].read()) if row else None  # nosec B301
 
     def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
         """Set value in TimesTen cache with optional TTL."""
@@ -150,7 +152,8 @@ class TimesTenCache(CacheInterface):
 
         with self.connection.cursor() as cursor:
             if ttl:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     MERGE INTO cache_store USING DUAL ON (cache_key = :key)
                     WHEN MATCHED THEN
                         UPDATE SET cache_value = :value,
@@ -158,16 +161,24 @@ class TimesTenCache(CacheInterface):
                     WHEN NOT MATCHED THEN
                         INSERT (cache_key, cache_value, expiry_time)
                         VALUES (:key, :value, SYSTIMESTAMP + INTERVAL :ttl SECOND)
-                """, key=key, value=serialized, ttl=ttl)
+                """,
+                    key=key,
+                    value=serialized,
+                    ttl=ttl,
+                )
             else:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     MERGE INTO cache_store USING DUAL ON (cache_key = :key)
                     WHEN MATCHED THEN
                         UPDATE SET cache_value = :value, expiry_time = NULL
                     WHEN NOT MATCHED THEN
                         INSERT (cache_key, cache_value, expiry_time)
                         VALUES (:key, :value, NULL)
-                """, key=key, value=serialized)
+                """,
+                    key=key,
+                    value=serialized,
+                )
             self.connection.commit()
 
     def delete(self, key: str) -> None:
@@ -179,16 +190,19 @@ class TimesTenCache(CacheInterface):
     def exists(self, key: str) -> bool:
         """Check if key exists in TimesTen cache."""
         with self.connection.cursor() as cursor:
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT 1 FROM cache_store
                 WHERE cache_key = :key
                 AND (expiry_time IS NULL OR expiry_time > SYSTIMESTAMP)
-            """, key=key)
+            """,
+                key=key,
+            )
             return cursor.fetchone() is not None
 
 
 def get_cache_backend(env: str = "development", **kwargs) -> CacheInterface:
-    """Factory function to get appropriate cache backend.
+    """Get appropriate cache backend for the given environment.
 
     Args:
         env: Environment name (development, testing, production)
