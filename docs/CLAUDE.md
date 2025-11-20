@@ -28,9 +28,13 @@
 
 **Quick Reference**:
 - Current Phase: **Phase 1 (Weeks 1-4) - Foundation**
+- Current Module: **Recommendation Engine - Cost Calculator**
 - TDD Approach: **Red-Green-Refactor** (write tests first, implement, refactor)
-- Test Coverage Target: **80%+**
+- Test Coverage: **93.18% (exceeds 80% target)**
+- Total Tests: **278 tests passing**
 - Documentation: All files in `docs/` directory
+
+**Recent Completion**: Pattern Detector Module (4 sub-modules, 63 tests, 95.65% coverage)
 
 ---
 
@@ -1093,6 +1097,93 @@ Achieves 87% accuracy on Oracle-specific test set (up from 82% baseline).
 
 Closes #42
 ```
+
+## Pattern Detector Implementation Reference
+
+The Pattern Detector module has been completed with 4 sub-modules implementing Oracle 23ai-specific schema anti-pattern detection:
+
+### Module 1.1: LOB Cliff Detector
+**File**: `src/recommendation/pattern_detector.py:23-267`
+**Tests**: `tests/unit/recommendation/test_lob_cliff_detector.py` (17 tests)
+
+Detects LOB cliff anti-patterns using risk scoring algorithm with 4 factors:
+- Large documents (>4KB): +0.3 risk
+- High update frequency (>100/day): +0.3 risk
+- Small updates (selectivity <0.1): +0.2 risk
+- Text JSON in CLOB (inefficient): +0.2 risk
+
+Threshold: ≥0.6 for detection, ≥0.8 for HIGH severity
+
+### Module 1.2: Join Dimension Analyzer
+**File**: `src/recommendation/pattern_detector.py:269-565`
+**Tests**: `tests/unit/recommendation/test_join_dimension_analyzer.py` (15 tests)
+
+Identifies expensive joins suitable for denormalization:
+- Builds join frequency matrix from workload
+- Calculates net benefit: join_cost_saved - update_propagation_cost
+- Only recommends if net_benefit > 0
+- Configurable thresholds for join frequency (10%), columns fetched (5), dimension size (1M rows)
+
+### Module 1.3: Document vs Relational Classifier
+**File**: `src/recommendation/pattern_detector.py:567-908`
+**Tests**: `tests/unit/recommendation/test_document_relational_classifier.py` (16 tests)
+
+Multi-factor scoring for storage optimization:
+
+**Document Score** (0.0-1.0):
+- SELECT * percentage: 40% weight
+- Object access pattern: 30% weight
+- Schema flexibility (nullable %): 20% weight
+- Multi-column updates: 10% weight
+
+**Relational Score** (0.0-1.0):
+- Aggregate queries: 50% weight
+- Complex joins (≥2 tables): 50% weight
+
+Net score = document_score - relational_score
+Recommends if |net_score| > 0.3 (strong signal threshold)
+
+### Module 1.4: Duality View Opportunity Finder
+**File**: `src/recommendation/pattern_detector.py:911-1157`
+**Tests**: `tests/unit/recommendation/test_duality_view_finder.py` (15 tests)
+
+Detects Oracle 23ai JSON Duality View opportunities:
+- **OLTP queries**: INSERT/UPDATE/DELETE + simple SELECT (no joins/aggregates)
+- **Analytics queries**: SELECT with aggregates or joins
+- Duality score = min(oltp_percentage, analytics_percentage) / 100
+- Requires both OLTP ≥10% and Analytics ≥10%
+- Severity: HIGH (≥30%), MEDIUM (≥15%), LOW (<15%)
+
+### Test Coverage Summary
+- **Total Pattern Detector tests**: 63
+- **Coverage**: 95.65% (322 statements, 14 missed - unreachable error paths)
+- **All tests passing**: Green across all modules
+- **Integration**: Clean module boundaries with shared data models (DetectedPattern, TableMetadata, WorkloadFeatures)
+
+### Data Models
+**File**: `src/recommendation/models.py`
+
+Key models used throughout Pattern Detector:
+```python
+@dataclass
+class DetectedPattern:
+    pattern_id: str
+    pattern_type: str  # "LOB_CLIFF", "EXPENSIVE_JOIN", etc.
+    severity: str  # "HIGH", "MEDIUM", "LOW"
+    confidence: float  # 0.0-1.0
+    affected_objects: List[str]
+    description: str
+    metrics: Dict[str, Any]
+    recommendation_hint: str
+```
+
+### Next Module: Cost Calculator
+According to the detailed design document, the next implementation phase is:
+- Module 2.1: Storage Cost Calculator
+- Module 2.2: Query Performance Predictor
+- Module 2.3: Maintenance Cost Estimator
+
+---
 
 ## Summary: Development Philosophy
 
