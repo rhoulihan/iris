@@ -36,7 +36,7 @@
 
 ## Project Identity
 
-**IRIS** (Intelligent Relational Intelligence System) - Named after the human eye's iris that focuses light for clear vision, and Iris, the Greek goddess who served as messenger between divine and mortal realms. This project bridges the gap between raw database performance data and actionable optimization intelligence.
+**IRIS** (Intelligent Recommendation and Inference System) - Named after the human eye's iris that focuses light for clear vision, and Iris, the Greek goddess who served as messenger between divine and mortal realms. This project bridges the gap between raw database performance data and actionable optimization recommendations through LLM inference and reinforcement learning.
 
 ## Developer Persona
 

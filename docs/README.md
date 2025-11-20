@@ -1,4 +1,4 @@
-# IRIS - Intelligent Relational Intelligence System
+# IRIS - Intelligent Recommendation and Inference System
 
 Oracle Enterprise Manager plugin with AI-powered schema optimization for Oracle 26ai databases.
 
