@@ -1,0 +1,112 @@
+version: '3.8'
+
+services:
+  # Oracle Database Free 26ai - IRIS Development Instance
+  oracle-iris-dev:
+    image: container-registry.oracle.com/database/free:latest
+    container_name: oracle-iris-dev
+    hostname: oracle-iris-dev
+    networks:
+      - iris-network
+    ports:
+      - "1524:1521"    # Oracle Listener (unique port, avoiding conflict with existing instance)
+      - "5503:5500"    # Enterprise Manager Express
+    environment:
+      - ORACLE_PWD=IrisDev123!
+      - ORACLE_CHARACTERSET=AL32UTF8
+      - ENABLE_ARCHIVELOG=false  # Disable for dev to save space
+    volumes:
+      - oracle-iris-data:/opt/oracle/oradata
+      - oracle-iris-backup:/opt/oracle/backup
+      - ./init-scripts:/docker-entrypoint-initdb.d/startup  # Initialization scripts
+    shm_size: 1g
+    ulimits:
+      nofile:
+        soft: 1024
+        hard: 65536
+    healthcheck:
+      test: ["CMD", "sh", "-c", "echo 'SELECT 1 FROM DUAL;' | sqlplus -s sys/IrisDev123!@localhost/FREEPDB1 as sysdba"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 180s  # Oracle takes time to start
+
+  # MinIO - S3-Compatible Object Storage for ML Artifacts
+  minio:
+    image: minio/minio:latest
+    container_name: iris-minio
+    hostname: iris-minio
+    networks:
+      - iris-network
+    ports:
+      - "9000:9000"    # API
+      - "9001:9001"    # Console
+    environment:
+      MINIO_ROOT_USER: iris-admin
+      MINIO_ROOT_PASSWORD: IrisMinIO123!
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis - Lightweight Cache (Alternative to TimesTen for Simple Caching)
+  redis:
+    image: redis:7-alpine
+    container_name: iris-redis
+    hostname: iris-redis
+    networks:
+      - iris-network
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # MLflow Tracking Server - Using Oracle Backend
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.9.2
+    container_name: iris-mlflow
+    hostname: iris-mlflow
+    networks:
+      - iris-network
+    ports:
+      - "5000:5000"
+    environment:
+      # Oracle backend using cx_Oracle format
+      - MLFLOW_BACKEND_STORE_URI=oracle+cx_oracle://mlflow_user:MlflowPass123!@oracle-iris-dev:1521/?service_name=FREEPDB1
+      - MLFLOW_ARTIFACT_ROOT=s3://mlflow-artifacts
+      - AWS_ACCESS_KEY_ID=iris-admin
+      - AWS_SECRET_ACCESS_KEY=IrisMinIO123!
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+    command: >
+      sh -c "pip install cx_Oracle &&
+             mlflow server
+             --host 0.0.0.0
+             --port 5000
+             --backend-store-uri oracle+cx_oracle://mlflow_user:MlflowPass123!@oracle-iris-dev:1521/?service_name=FREEPDB1
+             --default-artifact-root s3://mlflow-artifacts"
+    depends_on:
+      oracle-iris-dev:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+networks:
+  iris-network:
+    driver: bridge
+    name: iris-network
+
+volumes:
+  oracle-iris-data:
+  oracle-iris-backup:
+  minio-data:
+  redis-data:
