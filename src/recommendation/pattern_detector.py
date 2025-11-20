@@ -62,13 +62,18 @@ class LOBCliffDetector:
         )
 
     def detect(
-        self, tables: List[TableMetadata], workload: WorkloadFeatures
+        self,
+        tables: List[TableMetadata],
+        workload: WorkloadFeatures,
+        snapshot_duration_hours: float = 1.0,
     ) -> List[DetectedPattern]:
         """Detect LOB cliff anti-patterns in given tables and workload.
 
         Args:
             tables: List of table metadata to analyze
             workload: Workload features including query patterns
+            snapshot_duration_hours: Duration of the workload snapshot in hours (default: 1.0)
+                Used to scale update frequencies to daily rates.
 
         Returns:
             List of detected LOB cliff patterns
@@ -90,7 +95,9 @@ class LOBCliffDetector:
 
             # Step 3: Analyze each LOB column
             for col in lob_columns:
-                pattern = self._analyze_lob_column(table, col, update_queries)
+                pattern = self._analyze_lob_column(
+                    table, col, update_queries, snapshot_duration_hours
+                )
                 if pattern:
                     patterns.append(pattern)
 
@@ -123,7 +130,11 @@ class LOBCliffDetector:
         return [q for q in workload.queries if q.query_type == "UPDATE" and table.name in q.tables]
 
     def _analyze_lob_column(
-        self, table: TableMetadata, col: ColumnMetadata, update_queries: List[QueryPattern]
+        self,
+        table: TableMetadata,
+        col: ColumnMetadata,
+        update_queries: List[QueryPattern],
+        snapshot_duration_hours: float = 1.0,
     ) -> DetectedPattern | None:
         """Analyze a specific LOB column for cliff pattern.
 
@@ -131,13 +142,18 @@ class LOBCliffDetector:
             table: Table containing the column
             col: LOB column to analyze
             update_queries: Update queries affecting this table
+            snapshot_duration_hours: Duration of snapshot in hours for scaling to daily rate
 
         Returns:
             DetectedPattern if LOB cliff detected, None otherwise
         """
         # Calculate metrics
         avg_doc_size = col.avg_size if col.avg_size else table.avg_row_len
-        update_frequency = sum(q.executions for q in update_queries)
+        update_frequency_snapshot = sum(q.executions for q in update_queries)
+
+        # Scale to daily rate based on snapshot duration
+        updates_per_day = (update_frequency_snapshot / snapshot_duration_hours) * 24
+
         update_selectivity = self._calculate_update_selectivity(update_queries, col)
 
         # Calculate risk score based on multiple factors
@@ -148,7 +164,7 @@ class LOBCliffDetector:
             risk_score += 0.3
 
         # Factor 2: High update frequency
-        if update_frequency > self.high_update_frequency_threshold:
+        if updates_per_day > self.high_update_frequency_threshold:
             risk_score += 0.3
 
         # Factor 3: Small updates (low selectivity)
@@ -194,7 +210,7 @@ class LOBCliffDetector:
             description=description,
             metrics={
                 "avg_document_size_kb": avg_doc_size / 1024,
-                "updates_per_day": update_frequency,
+                "updates_per_day": updates_per_day,
                 "update_selectivity": update_selectivity,
                 "storage_type": storage_type,
                 "format": format_type,
@@ -411,12 +427,14 @@ class JoinDimensionAnalyzer:
         Returns:
             True if suitable, False otherwise
         """
+        # Check update rate FIRST - applies to all dimensions regardless of size
+        update_rate = self._get_update_rate(dimension_table, workload)
+        if update_rate > self.max_dimension_update_rate:
+            return False  # Too many updates - denormalization not worth it
+
         # Check size constraint
         if dimension_table.num_rows > self.max_dimension_rows:
-            # Large dimension - check if it's stable (rarely updated)
-            update_rate = self._get_update_rate(dimension_table, workload)
-            if update_rate > self.max_dimension_update_rate:
-                return False  # Too large and frequently updated
+            return False  # Too large for denormalization
 
         return True
 
