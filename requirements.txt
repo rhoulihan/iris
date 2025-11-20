@@ -16,6 +16,9 @@ boto3>=1.29.0
 # Caching
 redis>=5.0.0
 
+# LLM Integration
+anthropic>=0.39.0
+
 # MLOps & Serving
 mlflow>=2.9.0
 fastapi>=0.104.0
