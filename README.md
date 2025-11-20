@@ -5,7 +5,7 @@ Oracle Enterprise Manager plugin with AI-powered schema optimization for Oracle 
 [![Test Coverage](https://img.shields.io/badge/coverage-0%25-red)]()
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)]()
 [![Oracle](https://img.shields.io/badge/oracle-26ai-red.svg)]()
-[![License](https://img.shields.io/badge/license-MIT-green.svg)]()
+[![License](https://img.shields.io/badge/license-UPL--1.0-green.svg)](LICENSE)
 
 ---
 
