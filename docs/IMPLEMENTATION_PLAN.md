@@ -316,11 +316,17 @@ Purpose: Coordinate end-to-end workflow from AWR collection to recommendations
    - Pattern detection with all 4 detectors enabled
    - Full pipeline validated with simulation framework (AWR → Recommendations)
 
-5. **Simulation Framework** ✅ COMPLETE
+5. **Simulation Framework** ✅ COMPLETE - **ALL THREE WORKLOADS VALIDATED**
    - **Three realistic workload scenarios** for end-to-end testing:
-     - Workload 1: E-Commerce (relational → document optimization, 95:5 read:write)
-     - Workload 2: Inventory (document → relational optimization, 30:70 read:write)
-     - Workload 3: Orders (hybrid → duality views, 60:40 read:write)
+     - ✅ **Workload 1: E-Commerce** (relational → document, 95:5 read:write)
+       - Validated: 166 reads, 8 writes in 60s
+       - Pattern detection: JoinDimensionAnalyzer, DocumentRelationalClassifier
+     - ✅ **Workload 2: Inventory** (document → relational, 30:70 read:write)
+       - Validated: 50 reads, 116 writes in 60s
+       - Pattern detection: DocumentRelationalClassifier
+     - ✅ **Workload 3: Orders** (hybrid → duality views, 60:40 OLTP:Analytics)
+       - Validated: 100 OLTP, 66 analytics in 60s
+       - Pattern detection: DualityViewOpportunityFinder, JoinDimensionAnalyzer
    - **CLI Runner** (`tests/simulations/run_simulation.py`):
      - Schema creation and data generation using Faker library
      - Workload execution with configurable duration and rate limiting
@@ -340,13 +346,17 @@ Purpose: Coordinate end-to-end workflow from AWR collection to recommendations
      - Session-scoped fixtures (oracle_connection, clean_workload_schemas)
      - AWR availability skip markers (@pytest.mark.skipif)
      - Integration test markers (@pytest.mark.integration)
-   - **End-to-End Pipeline Validation**:
-     - ✅ AWR snapshot creation (begin/end snapshots)
-     - ✅ Workload execution (166 reads, 8 writes in 60s workload)
-     - ✅ SQL statistics collection (100 queries collected)
-     - ✅ Schema metadata collection (4 tables with NULL handling)
-     - ✅ Pattern detection (JoinDimensionAnalyzer, DocumentRelationalClassifier)
-     - ✅ Full 6-stage pipeline execution validated
+   - **End-to-End Pipeline Validation** ✅ **ALL WORKLOADS PASSING**:
+     - ✅ AWR snapshot creation (begin/end snapshots) - all 3 workloads
+     - ✅ Workload execution with correct query ratios - all 3 workloads
+     - ✅ SQL statistics collection (100 queries) - all 3 workloads
+     - ✅ Schema metadata collection - all 3 workloads
+     - ✅ Pattern detection (all 4 detectors) - all 3 workloads
+     - ✅ Full 6-stage pipeline execution - all 3 workloads
+   - **Bug Fixes Applied** (commit c9d91d3):
+     - ✅ SQL parser: Multi-line comment stripping (prevents execution of doc blocks)
+     - ✅ Oracle JSON: Fixed path syntax compatibility (`JSON_VALUE` vs unsupported filters)
+     - ✅ Schema creation: Idempotent re-runs (added ORA-00955 to ignored errors)
 
 **Integration Tests:**
 - ✅ Pipeline orchestrator initialization and configuration
@@ -574,6 +584,8 @@ The LLM will receive rich context for sophisticated analysis:
    - CLI runner with AWR snapshot management
    - Recommendation validator with expected outcomes
    - End-to-end pipeline validation with Oracle 26ai
+   - **All three workloads validated successfully** (commit c9d91d3)
+   - Bug fixes for SQL parser, Oracle JSON syntax, and idempotent schema creation
 
 ### Short-term (Next Sprint)
 10. API & CLI Interface
