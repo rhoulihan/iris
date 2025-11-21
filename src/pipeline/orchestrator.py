@@ -14,16 +14,15 @@ from src.data.feature_engineer import FeatureEngineer
 from src.data.query_parser import QueryParser
 from src.data.schema_collector import SchemaCollector
 from src.data.workload_compressor import WorkloadCompressor
+from src.pipeline.converters import dict_to_query_pattern, dict_to_table_metadata
 from src.recommendation.cost_calculator import CostCalculatorFactory
-from src.recommendation.models import TableMetadata, WorkloadFeatures
-
-# TODO: Import pattern detectors when schema collection is implemented
-# from src.recommendation.pattern_detector import (
-#     DocumentRelationalClassifier,
-#     DualityViewOpportunityFinder,
-#     JoinDimensionAnalyzer,
-#     LOBCliffDetector,
-# )
+from src.recommendation.models import QueryPattern, SchemaMetadata, TableMetadata, WorkloadFeatures
+from src.recommendation.pattern_detector import (
+    DocumentRelationalClassifier,
+    DualityViewOpportunityFinder,
+    JoinDimensionAnalyzer,
+    LOBCliffDetector,
+)
 from src.recommendation.recommendation_engine import RecommendationEngine, SchemaRecommendation
 from src.recommendation.roi_calculator import ROICalculator
 from src.recommendation.tradeoff_analyzer import TradeoffAnalyzer
@@ -265,23 +264,71 @@ class PipelineOrchestrator:
                 logger.warning("No SQL statistics found in AWR snapshots")
                 return None, []
 
-            # TODO: Parse queries and build workload
-            # Query parsing needs to convert Dict results to QueryPattern objects
-            # For now, return empty workload to allow pipeline to initialize
+            # Limit queries to analyze
+            sql_stats_to_process = sql_stats[: self.config.max_queries_to_analyze]
+
+            # Compress workload if enabled (before parsing)
+            if self.config.compress_workload and sql_stats_to_process:
+                compressed_result = self._workload_compressor.compress(sql_stats_to_process)
+                sql_stats_to_process = compressed_result.get(
+                    "compressed_queries", sql_stats_to_process
+                )
+                logger.info(
+                    f"Compressed workload: {len(sql_stats)} → {len(sql_stats_to_process)} queries"
+                )
+
+            # Parse queries and build workload using converters
+            queries: List[QueryPattern] = []
+            for stat in sql_stats_to_process:
+                try:
+                    # Parse SQL to get query features
+                    parsed_dict = self._query_parser.parse(stat.get("sql_text", ""))
+
+                    # Convert to QueryPattern using converter
+                    query_pattern = dict_to_query_pattern(
+                        parsed_dict,
+                        sql_id=stat.get("sql_id", f"query_{len(queries)}"),
+                    )
+
+                    # Enrich with AWR statistics
+                    query_pattern.executions = int(stat.get("executions", 1))
+                    query_pattern.avg_elapsed_time_ms = float(
+                        stat.get("elapsed_time_total", 0)
+                    ) / max(query_pattern.executions, 1)
+
+                    queries.append(query_pattern)
+                except Exception as e:
+                    logger.debug(f"Failed to parse/convert query: {e}")
+                    continue
+
+            # Build workload features
             workload = WorkloadFeatures(
-                queries=[],
-                total_executions=0,
-                unique_patterns=0,
+                queries=queries,
+                total_executions=sum(q.executions for q in queries),
+                unique_patterns=len(queries),
             )
-            logger.info("Query parsing skipped - requires QueryPattern object conversion")
 
-            # Collect schema metadata
-            # TODO: For now, return empty tables list as schema collection needs TableMetadata conversion
-            # Schema collection requires converting Dict results to TableMetadata objects
-            # This will be implemented in a future enhancement
+            # Collect schema metadata using converters
             tables: List[TableMetadata] = []
+            if schemas:
+                for schema in schemas:
+                    try:
+                        # Get tables as dicts from schema_collector
+                        table_dicts = self._schema_collector.get_tables(schema)
 
-            logger.info(f"Collected {workload.unique_patterns} queries and {len(tables)} tables")
+                        # Convert each dict to TableMetadata
+                        for table_dict in table_dicts:
+                            try:
+                                table_metadata = dict_to_table_metadata(table_dict)
+                                tables.append(table_metadata)
+                            except Exception as e:
+                                logger.debug(f"Failed to convert table metadata: {e}")
+                                continue
+                    except Exception as e:
+                        logger.warning(f"Failed to collect schema {schema}: {e}")
+                        continue
+
+            logger.info(f"Collected {len(queries)} queries and {len(tables)} tables")
 
             return workload, tables
 
@@ -314,22 +361,55 @@ class PipelineOrchestrator:
         """
         all_patterns: List = []
 
-        # TODO: Pattern detectors have inconsistent APIs and require TableMetadata
-        # Once schema collection is implemented, uncomment and fix these calls:
-        #
-        # LOB Cliff Detection
-        # if self.config.enable_lob_detection and tables:
-        #     detector = LOBCliffDetector()
-        #     patterns = detector.detect(tables, workload)
-        #     all_patterns.extend(patterns)
-        #     logger.info(f"Detected {len(patterns)} LOB cliff patterns")
+        # Create SchemaMetadata for detectors that need it
+        schema = SchemaMetadata(tables={table.name: table for table in tables})
 
-        logger.info("Pattern detection skipped - requires table metadata implementation")
+        # LOB Cliff Detection
+        if self.config.enable_lob_detection and tables:
+            try:
+                detector = LOBCliffDetector()
+                patterns = detector.detect(tables, workload)
+                all_patterns.extend(patterns)
+                logger.info(f"Detected {len(patterns)} LOB cliff patterns")
+            except Exception as e:
+                logger.warning(f"LOB cliff detection failed: {e}")
+
+        # Join Dimension Analysis - uses analyze(workload, schema)
+        if self.config.enable_join_analysis:
+            try:
+                analyzer = JoinDimensionAnalyzer()
+                patterns = analyzer.analyze(workload, schema)
+                all_patterns.extend(patterns)
+                logger.info(f"Detected {len(patterns)} expensive join patterns")
+            except Exception as e:
+                logger.warning(f"Join analysis failed: {e}")
+
+        # Document vs Relational Classification - uses classify(tables, workload, schema)
+        if self.config.enable_document_analysis and tables:
+            try:
+                classifier = DocumentRelationalClassifier()
+                patterns = classifier.classify(tables, workload, schema)
+                all_patterns.extend(patterns)
+                logger.info(f"Detected {len(patterns)} document/relational patterns")
+            except Exception as e:
+                logger.warning(f"Document classification failed: {e}")
+
+        # Duality View Opportunity Detection - uses find_opportunities(tables, workload)
+        if self.config.enable_duality_view_analysis and tables:
+            try:
+                finder = DualityViewOpportunityFinder()
+                patterns = finder.find_opportunities(tables, workload)
+                all_patterns.extend(patterns)
+                logger.info(f"Detected {len(patterns)} duality view opportunities")
+            except Exception as e:
+                logger.warning(f"Duality view detection failed: {e}")
 
         # Filter by confidence
         all_patterns = [
             p for p in all_patterns if p.confidence >= self.config.min_confidence_threshold
         ]
+
+        logger.info(f"Total patterns detected: {len(all_patterns)}")
 
         return all_patterns
 

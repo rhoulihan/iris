@@ -217,13 +217,22 @@ pytest tests/ --cov=src --cov-report=html
   - Tradeoff analysis integration
   - LLM SQL generation with mocked Claude client
   - **2/2 tests passing (100% pass rate)**
-- ✅ **Pipeline Orchestrator (Phase 4 - Initial Implementation)**
+- ✅ **Pipeline Orchestrator (Phase 4 - Complete)**
   - End-to-end workflow coordination (AWR → Recommendations)
   - 6-stage pipeline: Data Collection → Feature Engineering → Pattern Detection → Cost Analysis → Tradeoff Analysis → Recommendation Generation
   - Configurable pattern detectors and filtering thresholds
   - Comprehensive error handling and metrics tracking
+  - **Data Model Converters** (94.12% coverage)
+    - Dict → QueryPattern conversion (AWR results to typed models)
+    - Dict → TableMetadata conversion (schema collector to typed models)
+    - Type validation and error handling with ConversionError
+    - 14/14 converter tests passing (100% pass rate)
+  - **End-to-End Pipeline Integration**
+    - Query parsing with dict_to_query_pattern converter
+    - Schema collection with dict_to_table_metadata converter
+    - Pattern detection enabled for all 4 detectors (LOB, Join, Document, Duality View)
+    - Full pipeline flow from AWR data → Recommendations
   - **22/22 integration tests passing (100% pass rate)**
-  - **Coverage**: 41.53% (orchestrator module - needs more unit tests)
 
 **In Progress**:
 - CLI entry point for pipeline execution
@@ -234,8 +243,8 @@ pytest tests/ --cov=src --cov-report=html
 - ⏳ Feature store implementation (Feast + TimesTen)
 - ⏳ RL Optimizer (DS-DDPG) implementation
 
-**Test Coverage**: **89.04%** (Overall) | Pipeline Orchestrator 41.53% | Pattern Detector 95.68% | Cost Calculator 80.92% | Tradeoff Analyzer 100% | Recommendation Engine 92.41% | SQL Generator 98.77% | Cache Interface 89.06%
-**Total Tests**: **431 passing** (51 unit cache/storage + 27 ROI + 60 pattern detection + 22 tradeoff + 18 recommendation + 12 SQL generation + 24 pipeline orchestrator + other modules)
+**Test Coverage**: **88.22%** (Overall) | Data Converters 94.12% | Pattern Detector 95.68% | Cost Calculator 80.92% | Tradeoff Analyzer 100% | Recommendation Engine 92.41% | SQL Generator 98.77% | Cache Interface 89.06%
+**Total Tests**: **445 passing** (51 unit cache/storage + 27 ROI + 60 pattern detection + 22 tradeoff + 18 recommendation + 12 SQL generation + 14 data converters + 24 pipeline orchestrator + other modules)
 **Timeline**: 20 weeks to production (target: May 2026)
 
 ---

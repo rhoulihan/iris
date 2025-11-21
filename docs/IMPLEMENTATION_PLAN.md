@@ -281,19 +281,53 @@ Purpose: Generate actionable schema recommendations with implementation plans
 }
 ```
 
-### Phase 4: Integration & Testing 📋 PLANNED
+### Phase 4: Pipeline Orchestrator & Integration 🔄 IN PROGRESS
+
+**Module: Pipeline Orchestrator** ✅ PROTOTYPE COMPLETE (src/pipeline/orchestrator.py)
+
+Purpose: Coordinate end-to-end workflow from AWR collection to recommendations
+
+**Status**: Prototype complete with 22 integration tests (100% pass rate)
+
+**Implementation:**
+1. **Pipeline Architecture** ✅
+   - 6-stage pipeline: Data Collection → Feature Engineering → Pattern Detection → Cost Analysis → Tradeoff Analysis → Recommendation Generation
+   - Configurable pattern detectors and thresholds
+   - Comprehensive error handling and metrics tracking
+   - **Coverage**: 22/22 integration tests passing
+
+2. **Data Model Converters** 🔄 IN PROGRESS
+   - Dict → TableMetadata conversion (from schema_collector results)
+   - Dict → QueryPattern conversion (from query_parser results)
+   - Type-safe conversion utilities with validation
+   - **Coverage**: Unit tests in progress
+
+3. **Pattern Detector Interface Standardization** 📋 PLANNED
+   - Common `detect()` API across all detectors
+   - Consistent method signatures
+   - Unified return types
+
+4. **End-to-End Integration** 📋 PLANNED
+   - Wire up all pipeline stages
+   - Enable query parsing with converters
+   - Enable schema collection with converters
+   - Enable pattern detection with standardized interfaces
 
 **Integration Tests:**
-- End-to-end workload analysis pipeline
-- Schema recommendation generation
-- Cost/benefit validation
-- Oracle 23ai integration tests
+- ✅ Pipeline orchestrator initialization and configuration
+- ✅ Empty workload handling
+- ✅ Error handling and resilience
+- ✅ Metrics tracking
+- 📋 End-to-end workload analysis pipeline (awaiting converters)
+- 📋 Schema recommendation generation (awaiting converters)
+- 📋 Cost/benefit validation
+- 📋 Oracle 23ai integration tests
 
 **Components:**
-- Integration test suite (tests/integration/)
-- Performance benchmarking
-- Real workload validation
-- Recommendation accuracy testing
+- ✅ Integration test suite (tests/integration/)
+- 📋 Performance benchmarking
+- 📋 Real workload validation
+- 📋 Recommendation accuracy testing
 
 ### Phase 5: User Interface 📋 PLANNED
 
