@@ -429,12 +429,30 @@ pytest tests/ --cov=src --cov-report=html
     - ✅ Oracle JSON path syntax compatibility
     - ✅ Idempotent schema creation (ORA-00955)
 
+- ✅ **API & CLI Interface (Phase 5 - In Progress)**
+  - **Design Document** (docs/API_CLI_DESIGN.md)
+    - Complete CLI command specifications (analyze, recommendations, explain, apply)
+    - REST API endpoint designs (13 endpoints)
+    - Data models with Pydantic
+    - Security and authentication
+  - **CLI Foundation** (src/cli/)
+    - ✅ Version module with semantic versioning
+    - ✅ Directory structure (cli, api, services)
+    - ✅ Dependencies added (Click 8.1+, PyYAML 6.0+)
+    - ✅ 6/6 version tests passing
+  - **Next Steps**:
+    - CLI entry point (iris command)
+    - Configuration management
+    - AnalysisService application layer
+    - CLI commands implementation
+    - FastAPI REST API
+
 **In Progress**:
+- API & CLI Interface (Phase 5) - Foundation complete, implementing commands
 - Enhancing pattern detection sensitivity for small workloads
 - Adding more simulation scenarios (LOB cliff detection specific workload)
 
 **Next Up**:
-- ⏳ API & CLI Interface (Phase 5)
 - ⏳ Feature store implementation (Feast + TimesTen)
 - ⏳ RL Optimizer (DS-DDPG) implementation
 

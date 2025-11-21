@@ -374,19 +374,49 @@ Purpose: Coordinate end-to-end workflow from AWR collection to recommendations
 - ✅ Recommendation accuracy testing (validator with expected outcomes)
 - 📋 Performance benchmarking (planned for Phase 5)
 
-### Phase 5: User Interface 📋 PLANNED
+### Phase 5: User Interface 🔄 IN PROGRESS
 
-**Command-Line Interface:**
-- Interactive workload analysis
-- Schema recommendation browser
-- What-if analysis tool
-- Recommendation export
+**Design Document** ✅ COMPLETE (docs/API_CLI_DESIGN.md)
+- Comprehensive CLI command specifications
+- REST API endpoint designs (13 endpoints)
+- Data models with Pydantic validation
+- Configuration file format (YAML)
+- Security considerations
+- Error handling patterns
 
-**API Interface:**
-- RESTful API for programmatic access
-- Recommendation retrieval
-- Impact analysis endpoints
-- Monitoring integration
+**CLI Foundation** ✅ COMPLETE
+- Directory structure: src/cli, src/api, src/services
+- Version module (src/cli/version.py)
+  - Semantic versioning (__version__ = "1.0.0")
+  - Detailed version information (Python, Oracle driver, pattern detectors)
+  - 6/6 tests passing (100% coverage)
+- Dependencies: Click 8.1+, PyYAML 6.0+
+
+**Command-Line Interface** 🔄 IN PROGRESS
+- `iris version` ✅ Complete
+- `iris analyze` 📋 Planned - Interactive workload analysis
+- `iris recommendations` 📋 Planned - Schema recommendation browser
+- `iris explain` 📋 Planned - Detailed recommendation explanation
+- `iris apply` 📋 Planned - Apply recommendations with safety checks
+- `iris config` 📋 Planned - Configuration management
+
+**API Interface** 📋 PLANNED
+- RESTful API for programmatic access (FastAPI)
+- POST /api/v1/analyze - Trigger analysis
+- GET /api/v1/recommendations - List recommendations
+- GET /api/v1/recommendations/{id} - Get recommendation details
+- POST /api/v1/recommendations/{id}/apply - Apply recommendation
+- GET /api/v1/workloads - List analyzed workloads
+- GET /api/v1/metrics - System metrics
+- GET /health - Health check
+
+**Next Steps**:
+- Implement CLI entry point (iris command)
+- Implement configuration management
+- Implement AnalysisService application layer
+- Implement CLI commands (analyze, recommendations, explain, apply)
+- Implement REST API with FastAPI
+- Integration tests
 
 ## Data Flow
 
