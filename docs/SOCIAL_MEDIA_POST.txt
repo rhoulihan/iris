@@ -1,0 +1,62 @@
+🚀 Built an enterprise-grade ML system without writing a single line of code myself.
+
+I acted as Technical Program Manager for IRIS - an AI-powered Oracle database optimization engine - using Claude Code (Sonnet 4.5) to implement the entire codebase. I provided requirements, reviewed architecture decisions, and validated test results. The AI did 100% of the coding.
+
+The results? Better than most senior engineering teams:
+
+📊 **Metrics That Matter:**
+• 88.22% test coverage (industry avg: 60-70%)
+• 2.81:1 test-to-production code ratio (industry avg: 1:1)
+• 445 passing tests across 3,152 lines of production code
+• 8,874 lines of comprehensive test coverage
+• 34.5% inline documentation (industry avg: 10-20%)
+• Zero flaky tests, zero technical debt
+
+🏗️ **Engineering Excellence:**
+• Test-Driven Development from day one
+• Pre-commit hooks: black, isort, flake8, mypy, bandit
+• Type hints on 100% of functions
+• Comprehensive docstrings (Google style)
+• Integration tests with TestContainers
+• End-to-end simulation framework
+
+🎯 **What We Built:**
+• 6-stage ML pipeline: AWR collection → Pattern detection → Cost analysis → Recommendations
+• 4 pattern detectors (LOB cliff, join analysis, document/relational, duality views)
+• LLM-powered SQL generation (Claude API)
+• Oracle 26ai integration with real AWR snapshots
+• Complete simulation framework (3 realistic workloads)
+
+💡 **The Process:**
+I never looked at the implementation code. My role:
+• Define acceptance criteria
+• Review test plans
+• Approve architecture decisions
+• Validate end-to-end results
+• Manage sprints and milestones
+
+Claude Code handled:
+• Writing tests first (TDD)
+• Implementing to pass tests
+• Refactoring for quality
+• Documentation
+• Debugging and fixing issues
+
+⚡ **Development Speed:**
+Phase 4 alone: 4,381 insertions, 25 files, complete pipeline orchestration + simulation framework - delivered in days, not weeks.
+
+🔍 **Quality Indicators:**
+• All tests passing (100% green)
+• No security vulnerabilities (bandit scanning)
+• No linting violations (flake8)
+• No type errors (mypy strict mode)
+• Production-ready code quality from first commit
+
+This is the future of software engineering: humans focus on **what** to build and **why**, AI handles **how** to build it with excellence.
+
+The combination of human domain expertise + AI implementation + rigorous testing = better outcomes than either could achieve alone.
+
+Full project: github.com/rhoulihan/iris
+Built with: Claude Code (Anthropic)
+
+#AI #SoftwareEngineering #MLOps #TestDrivenDevelopment #Oracle #EnterpriseAI
