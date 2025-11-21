@@ -210,19 +210,25 @@ pytest tests/ --cov=src --cov-report=html
   - Fallback to placeholder SQL on LLM errors
   - Integrated with Recommendation Engine Core
   - **8/8 tests passing (100% pass rate)**
+- ✅ **End-to-End Pipeline Integration Tests**
+  - Complete flow from pattern detection to SQL generation
+  - Real workload scenarios (LOB Cliff)
+  - ROI calculation and priority scoring integration
+  - Tradeoff analysis integration
+  - LLM SQL generation with mocked Claude client
+  - **2/2 tests passing (100% pass rate)**
 
 **In Progress**:
 - None (Phase 3 complete!)
 
 **Next Up**:
-- ⏳ End-to-end integration tests for complete pipeline
 - ⏳ Data Collection Pipeline (AWR integration) (Phase 4)
 - ⏳ API & CLI Interface (Phase 5)
 - ⏳ Feature store implementation (Feast + TimesTen)
 - ⏳ RL Optimizer (DS-DDPG) implementation
 
-**Test Coverage**: Overall 25.51% | Pattern Detector 90.12% | Cost Calculator 87.54% | Tradeoff Analyzer 100% | Recommendation Engine 89.66% | SQL Generator 77.78%
-**Total Tests**: 386 passing (46 unit + 27 ROI + 60 integration + 22 tradeoff + 18 recommendation + 8 SQL generation + 5 data models)
+**Test Coverage**: Overall 34.08% | Pattern Detector 28.70% | Cost Calculator 45.80% | Tradeoff Analyzer 62.34% | Recommendation Engine 65.52% | SQL Generator 67.90%
+**Total Tests**: 388 passing (46 unit + 27 ROI + 60 pattern detection + 22 tradeoff + 18 recommendation + 8 SQL generation + 2 end-to-end pipeline + 5 data models)
 **Timeline**: 20 weeks to production (target: May 2026)
 
 ---
