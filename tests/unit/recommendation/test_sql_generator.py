@@ -147,6 +147,94 @@ class TestPromptGeneration:
         assert "description" in prompt
         assert "Oracle" in prompt
 
+    def test_generate_join_prompt(self):
+        """Should generate appropriate prompt for expensive join pattern."""
+        generator = SQLGenerator(llm_client=MagicMock())
+        pattern = DetectedPattern(
+            pattern_id="PAT-JOIN-001",
+            pattern_type="EXPENSIVE_JOIN",
+            severity="MEDIUM",
+            confidence=0.75,
+            affected_objects=["ORDERS", "CUSTOMERS"],
+            description="Frequent join",
+            metrics={"join_frequency": 1000},
+            recommendation_hint="Denormalize",
+        )
+        table = create_table_metadata()
+        workload = create_workload_features()
+
+        prompt = generator._build_prompt(pattern, table, workload)
+
+        assert "denormaliz" in prompt.lower()
+        assert "ORDERS" in prompt or "CUSTOMERS" in prompt
+        assert "Oracle" in prompt
+
+    def test_generate_document_prompt(self):
+        """Should generate appropriate prompt for document candidate pattern."""
+        generator = SQLGenerator(llm_client=MagicMock())
+        pattern = DetectedPattern(
+            pattern_id="PAT-DOC-001",
+            pattern_type="DOCUMENT_CANDIDATE",
+            severity="MEDIUM",
+            confidence=0.70,
+            affected_objects=["USER_PROFILES"],
+            description="Document-like access",
+            metrics={"select_star_pct": 0.8},
+            recommendation_hint="Convert to JSON",
+        )
+        table = create_table_metadata()
+        workload = create_workload_features()
+
+        prompt = generator._build_prompt(pattern, table, workload)
+
+        assert "JSON" in prompt
+        assert "relational" in prompt.lower()
+        assert "Oracle" in prompt
+
+    def test_generate_duality_view_prompt(self):
+        """Should generate appropriate prompt for duality view pattern."""
+        generator = SQLGenerator(llm_client=MagicMock())
+        pattern = DetectedPattern(
+            pattern_id="PAT-DV-001",
+            pattern_type="DUALITY_VIEW_OPPORTUNITY",
+            severity="MEDIUM",
+            confidence=0.75,
+            affected_objects=["ORDERS"],
+            description="Mixed workload",
+            metrics={"oltp_pct": 0.6, "analytics_pct": 0.4},
+            recommendation_hint="Create Duality View",
+        )
+        table = create_table_metadata()
+        workload = create_workload_features()
+
+        prompt = generator._build_prompt(pattern, table, workload)
+
+        assert "DUALITY VIEW" in prompt or "Duality View" in prompt
+        assert "JSON" in prompt
+        assert "Oracle 23ai" in prompt
+
+    def test_generate_generic_prompt(self):
+        """Should generate generic prompt for unknown pattern types."""
+        generator = SQLGenerator(llm_client=MagicMock())
+        pattern = DetectedPattern(
+            pattern_id="PAT-UNK-001",
+            pattern_type="UNKNOWN_PATTERN",
+            severity="LOW",
+            confidence=0.50,
+            affected_objects=["TABLE1"],
+            description="Unknown pattern",
+            metrics={},
+            recommendation_hint="Optimize",
+        )
+        table = create_table_metadata()
+        workload = create_workload_features()
+
+        prompt = generator._build_prompt(pattern, table, workload)
+
+        assert "Oracle" in prompt
+        assert "UNKNOWN_PATTERN" in prompt
+        assert "TABLE1" in prompt
+
 
 class TestErrorHandling:
     """Test error handling in SQL generation."""

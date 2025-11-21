@@ -73,20 +73,23 @@ def frequent_update_queries():
 
 @pytest.fixture
 def infrequent_update_queries():
-    """Provide workload with infrequent updates."""
+    """Provide workload with infrequent updates.
+
+    2 executions in 1-hour snapshot = 48 updates/day (below 100/day threshold)
+    """
     return WorkloadFeatures(
         queries=[
             QueryPattern(
                 query_id="update_rare",
                 sql_text="UPDATE DOCUMENTS SET CONTENT = :content WHERE DOC_ID = :id",
                 query_type="UPDATE",
-                executions=10,
+                executions=2,  # 2 * 24 = 48 updates/day (below threshold)
                 avg_elapsed_time_ms=20.0,
                 tables=["DOCUMENTS"],
                 join_count=0,
             ),
         ],
-        total_executions=10,
+        total_executions=2,
         unique_patterns=1,
     )
 

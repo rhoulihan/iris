@@ -423,3 +423,106 @@ class TestCacheDataTypes:
         result = cache.get("config")
 
         assert result == test_value
+
+
+class TestTimesTenCacheInitialization:
+    """Test TimesTenCache initialization."""
+
+    @pytest.mark.unit
+    def test_timesten_cache_initialization(self):
+        """Test TimesTenCache initialization with mocked oracle db."""
+        from src.common.cache_interface import TimesTenCache
+
+        with patch("oracledb.connect") as mock_connect:
+            mock_connection = MagicMock()
+            mock_connect.return_value = mock_connection
+
+            cache = TimesTenCache(dsn="localhost/TTDB")
+
+            mock_connect.assert_called_once_with("localhost/TTDB")
+            assert cache.connection == mock_connection
+
+
+class TestTimesTenCacheOperations:
+    """Test TimesTenCache get/set/delete operations."""
+
+    @pytest.mark.unit
+    def test_timesten_get_existing_key(self):
+        """Test getting an existing key from TimesTen cache."""
+        import pickle
+
+        from src.common.cache_interface import TimesTenCache
+
+        with patch("oracledb.connect") as mock_connect:
+            mock_connection = MagicMock()
+            mock_cursor = MagicMock()
+            mock_connection.cursor.return_value.__enter__.return_value = mock_cursor
+
+            test_value = {"data": "test"}
+            # Mock BLOB object with read() method
+            mock_blob = MagicMock()
+            mock_blob.read.return_value = pickle.dumps(test_value)
+            mock_cursor.fetchone.return_value = (mock_blob,)
+
+            mock_connect.return_value = mock_connection
+
+            cache = TimesTenCache(dsn="localhost/TTDB")
+            result = cache.get("test_key")
+
+            assert result == test_value
+
+    @pytest.mark.unit
+    def test_timesten_get_nonexistent_key(self):
+        """Test getting a non-existent key returns None."""
+        from src.common.cache_interface import TimesTenCache
+
+        with patch("oracledb.connect") as mock_connect:
+            mock_connection = MagicMock()
+            mock_cursor = MagicMock()
+            mock_connection.cursor.return_value.__enter__.return_value = mock_cursor
+            mock_cursor.fetchone.return_value = None
+
+            mock_connect.return_value = mock_connection
+
+            cache = TimesTenCache(dsn="localhost/TTDB")
+            result = cache.get("nonexistent")
+
+            assert result is None
+
+    @pytest.mark.unit
+    def test_timesten_set_value(self):
+        """Test setting a value in TimesTen cache."""
+        from src.common.cache_interface import TimesTenCache
+
+        with patch("oracledb.connect") as mock_connect:
+            mock_connection = MagicMock()
+            mock_cursor = MagicMock()
+            mock_connection.cursor.return_value.__enter__.return_value = mock_cursor
+
+            mock_connect.return_value = mock_connection
+
+            cache = TimesTenCache(dsn="localhost/TTDB")
+            cache.set("test_key", "test_value", ttl=3600)
+
+            # Verify execute was called (for INSERT/UPDATE)
+            assert mock_cursor.execute.called
+            mock_connection.commit.assert_called()
+
+    @pytest.mark.unit
+    def test_timesten_delete_key(self):
+        """Test deleting a key from TimesTen cache."""
+        from src.common.cache_interface import TimesTenCache
+
+        with patch("oracledb.connect") as mock_connect:
+            mock_connection = MagicMock()
+            mock_cursor = MagicMock()
+            mock_connection.cursor.return_value.__enter__.return_value = mock_cursor
+
+            mock_connect.return_value = mock_connection
+
+            cache = TimesTenCache(dsn="localhost/TTDB")
+            cache.delete("test_key")
+
+            # Verify DELETE was called
+            assert mock_cursor.execute.called
+            mock_connection.commit.assert_called()
