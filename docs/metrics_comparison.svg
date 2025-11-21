@@ -49,82 +49,82 @@
   <text x="340" y="192" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#f7fafc">65%</text>
 
   <!-- IRIS bar -->
-  <rect x="50" y="210" width="352" height="25" fill="url(#irisBar)" rx="4" filter="url(#glow)"/>
-  <text x="412" y="227" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#48bb78">88.22%</text>
-  <text x="475" y="227" font-family="Arial, sans-serif" font-size="12" fill="#68d391">+36% ✓</text>
+  <rect x="50" y="210" width="380" height="25" fill="url(#irisBar)" rx="4" filter="url(#glow)"/>
+  <text x="440" y="227" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#48bb78">88.22%</text>
+  <text x="50" y="245" font-family="Arial, sans-serif" font-size="12" fill="#68d391">+36% better ✓</text>
 
   <!-- Metric 2: Test:Prod Ratio -->
   <text x="50" y="280" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#f7fafc">Test:Production Code Ratio</text>
   <text x="50" y="300" font-family="Arial, sans-serif" font-size="12" fill="#cbd5e0">Higher is better (more comprehensive testing)</text>
 
   <!-- Industry bar -->
-  <rect x="50" y="315" width="100" height="25" fill="url(#industryBar)" rx="4"/>
-  <text x="160" y="332" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#f7fafc">1:1</text>
+  <rect x="50" y="315" width="135" height="25" fill="url(#industryBar)" rx="4"/>
+  <text x="195" y="332" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#f7fafc">1:1</text>
 
   <!-- IRIS bar -->
-  <rect x="50" y="350" width="281" height="25" fill="url(#irisBar)" rx="4" filter="url(#glow)"/>
-  <text x="341" y="367" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#48bb78">2.81:1</text>
-  <text x="400" y="367" font-family="Arial, sans-serif" font-size="12" fill="#68d391">+181% ✓</text>
+  <rect x="50" y="350" width="380" height="25" fill="url(#irisBar)" rx="4" filter="url(#glow)"/>
+  <text x="440" y="367" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#48bb78">2.81:1</text>
+  <text x="50" y="385" font-family="Arial, sans-serif" font-size="12" fill="#68d391">+181% better ✓</text>
 
   <!-- Metric 3: Code Documentation -->
   <text x="50" y="420" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#f7fafc">Code Documentation</text>
   <text x="50" y="440" font-family="Arial, sans-serif" font-size="12" fill="#cbd5e0">Comments &amp; docstrings as % of code</text>
 
   <!-- Industry bar -->
-  <rect x="50" y="455" width="60" height="25" fill="url(#industryBar)" rx="4"/>
-  <text x="120" y="472" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#f7fafc">15%</text>
+  <rect x="50" y="455" width="165" height="25" fill="url(#industryBar)" rx="4"/>
+  <text x="225" y="472" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#f7fafc">15%</text>
 
   <!-- IRIS bar -->
-  <rect x="50" y="490" width="138" height="25" fill="url(#irisBar)" rx="4" filter="url(#glow)"/>
-  <text x="198" y="507" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#48bb78">34.5%</text>
-  <text x="250" y="507" font-family="Arial, sans-serif" font-size="12" fill="#68d391">+130% ✓</text>
+  <rect x="50" y="490" width="380" height="25" fill="url(#irisBar)" rx="4" filter="url(#glow)"/>
+  <text x="440" y="507" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#48bb78">34.5%</text>
+  <text x="50" y="525" font-family="Arial, sans-serif" font-size="12" fill="#68d391">+130% better ✓</text>
 
   <!-- Stats Box -->
-  <rect x="420" y="130" width="340" height="380" fill="#2d3748" stroke="#4a5568" stroke-width="2" rx="8"/>
+  <rect x="490" y="130" width="290" height="380" fill="#2d3748" stroke="#4a5568" stroke-width="2" rx="8"/>
 
-  <text x="590" y="160" font-family="Arial, sans-serif" font-size="18" font-weight="bold"
+  <text x="635" y="160" font-family="Arial, sans-serif" font-size="18" font-weight="bold"
         fill="#f7fafc" text-anchor="middle">Project Statistics</text>
 
   <!-- Stats content -->
-  <text x="440" y="195" font-family="monospace" font-size="13" fill="#cbd5e0">Production Code:</text>
-  <text x="730" y="195" font-family="monospace" font-size="13" font-weight="bold" fill="#48bb78" text-anchor="end">3,152 lines</text>
+  <text x="500" y="195" font-family="monospace" font-size="12" fill="#cbd5e0">Prod Code:</text>
+  <text x="770" y="195" font-family="monospace" font-size="12" font-weight="bold" fill="#48bb78" text-anchor="end">3,152 lines</text>
 
-  <text x="440" y="220" font-family="monospace" font-size="13" fill="#cbd5e0">Test Code:</text>
-  <text x="730" y="220" font-family="monospace" font-size="13" font-weight="bold" fill="#48bb78" text-anchor="end">8,874 lines</text>
+  <text x="500" y="220" font-family="monospace" font-size="12" fill="#cbd5e0">Test Code:</text>
+  <text x="770" y="220" font-family="monospace" font-size="12" font-weight="bold" fill="#48bb78" text-anchor="end">8,874 lines</text>
 
-  <text x="440" y="245" font-family="monospace" font-size="13" fill="#cbd5e0">Total Tests:</text>
-  <text x="730" y="245" font-family="monospace" font-size="13" font-weight="bold" fill="#48bb78" text-anchor="end">445 passing</text>
+  <text x="500" y="245" font-family="monospace" font-size="12" fill="#cbd5e0">Total Tests:</text>
+  <text x="770" y="245" font-family="monospace" font-size="12" font-weight="bold" fill="#48bb78" text-anchor="end">445 passing</text>
 
-  <text x="440" y="270" font-family="monospace" font-size="13" fill="#cbd5e0">Test Pass Rate:</text>
-  <text x="730" y="270" font-family="monospace" font-size="13" font-weight="bold" fill="#48bb78" text-anchor="end">100%</text>
+  <text x="500" y="270" font-family="monospace" font-size="12" fill="#cbd5e0">Pass Rate:</text>
+  <text x="770" y="270" font-family="monospace" font-size="12" font-weight="bold" fill="#48bb78" text-anchor="end">100%</text>
 
-  <line x1="440" y1="285" x2="740" y2="285" stroke="#4a5568" stroke-width="1"/>
+  <line x1="500" y1="285" x2="770" y2="285" stroke="#4a5568" stroke-width="1"/>
 
-  <text x="440" y="310" font-family="monospace" font-size="13" fill="#cbd5e0">Comment Lines:</text>
-  <text x="730" y="310" font-family="monospace" font-size="13" font-weight="bold" fill="#68d391" text-anchor="end">4,190</text>
+  <text x="500" y="310" font-family="monospace" font-size="12" fill="#cbd5e0">Comments:</text>
+  <text x="770" y="310" font-family="monospace" font-size="12" font-weight="bold" fill="#68d391" text-anchor="end">4,190</text>
 
-  <text x="440" y="335" font-family="monospace" font-size="13" fill="#cbd5e0">Documentation:</text>
-  <text x="730" y="335" font-family="monospace" font-size="13" font-weight="bold" fill="#68d391" text-anchor="end">1,150 lines</text>
+  <text x="500" y="335" font-family="monospace" font-size="12" fill="#cbd5e0">Docs Lines:</text>
+  <text x="770" y="335" font-family="monospace" font-size="12" font-weight="bold" fill="#68d391" text-anchor="end">1,150</text>
 
-  <text x="440" y="360" font-family="monospace" font-size="13" fill="#cbd5e0">Python Files:</text>
-  <text x="730" y="360" font-family="monospace" font-size="13" font-weight="bold" fill="#68d391" text-anchor="end">75</text>
+  <text x="500" y="360" font-family="monospace" font-size="12" fill="#cbd5e0">Files:</text>
+  <text x="770" y="360" font-family="monospace" font-size="12" font-weight="bold" fill="#68d391" text-anchor="end">75</text>
 
-  <line x1="440" y1="375" x2="740" y2="375" stroke="#4a5568" stroke-width="1"/>
+  <line x1="500" y1="375" x2="770" y2="375" stroke="#4a5568" stroke-width="1"/>
 
-  <text x="590" y="400" font-family="Arial, sans-serif" font-size="14" font-weight="bold"
+  <text x="635" y="400" font-family="Arial, sans-serif" font-size="14" font-weight="bold"
         fill="#f7fafc" text-anchor="middle">Quality Gates</text>
 
-  <text x="440" y="425" font-family="monospace" font-size="12" fill="#68d391">✓ Black formatting</text>
-  <text x="610" y="425" font-family="monospace" font-size="12" fill="#68d391">✓ MyPy types</text>
+  <text x="500" y="425" font-family="monospace" font-size="11" fill="#68d391">✓ Black</text>
+  <text x="650" y="425" font-family="monospace" font-size="11" fill="#68d391">✓ MyPy</text>
 
-  <text x="440" y="445" font-family="monospace" font-size="12" fill="#68d391">✓ Flake8 linting</text>
-  <text x="610" y="445" font-family="monospace" font-size="12" fill="#68d391">✓ Bandit security</text>
+  <text x="500" y="445" font-family="monospace" font-size="11" fill="#68d391">✓ Flake8</text>
+  <text x="650" y="445" font-family="monospace" font-size="11" fill="#68d391">✓ Bandit</text>
 
-  <text x="440" y="465" font-family="monospace" font-size="12" fill="#68d391">✓ Isort imports</text>
-  <text x="610" y="465" font-family="monospace" font-size="12" fill="#68d391">✓ Pre-commit hooks</text>
+  <text x="500" y="465" font-family="monospace" font-size="11" fill="#68d391">✓ Isort</text>
+  <text x="650" y="465" font-family="monospace" font-size="11" fill="#68d391">✓ Hooks</text>
 
-  <text x="440" y="490" font-family="monospace" font-size="11" fill="#a0aec0" font-style="italic">Zero flaky tests</text>
-  <text x="440" y="505" font-family="monospace" font-size="11" fill="#a0aec0" font-style="italic">Zero technical debt</text>
+  <text x="500" y="490" font-family="monospace" font-size="10" fill="#a0aec0" font-style="italic">Zero flaky tests</text>
+  <text x="500" y="505" font-family="monospace" font-size="10" fill="#a0aec0" font-style="italic">Zero technical debt</text>
 
   <!-- Footer -->
   <text x="400" y="560" font-family="Arial, sans-serif" font-size="12"
