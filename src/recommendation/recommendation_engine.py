@@ -5,11 +5,14 @@ comprehensive recommendations with implementation SQL, rollback plans, and testi
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from src.recommendation.cost_models import CostEstimate
-from src.recommendation.models import DetectedPattern
+from src.recommendation.models import DetectedPattern, TableMetadata, WorkloadFeatures
 from src.recommendation.tradeoff_analyzer import OptimizationConflict, TradeoffAnalysis
+
+if TYPE_CHECKING:
+    from src.recommendation.sql_generator import SQLGenerator
 
 
 @dataclass
@@ -73,9 +76,14 @@ class SchemaRecommendation:
 class RecommendationEngine:
     """Engine for generating schema optimization recommendations."""
 
-    def __init__(self):
-        """Initialize recommendation engine."""
+    def __init__(self, sql_generator: Optional["SQLGenerator"] = None):
+        """Initialize recommendation engine.
+
+        Args:
+            sql_generator: Optional SQL generator for LLM-enhanced SQL generation
+        """
         self._recommendation_counter = 0
+        self._sql_generator = sql_generator
 
     def generate_recommendation(
         self,
@@ -83,6 +91,8 @@ class RecommendationEngine:
         cost_estimate: Optional[CostEstimate],
         tradeoff_analysis: TradeoffAnalysis,
         conflicts: List[OptimizationConflict],
+        table: Optional[TableMetadata] = None,
+        workload: Optional[WorkloadFeatures] = None,
     ) -> Optional[SchemaRecommendation]:
         """Generate a single recommendation.
 
@@ -91,9 +101,15 @@ class RecommendationEngine:
             cost_estimate: Cost estimate for pattern (optional)
             tradeoff_analysis: Tradeoff analysis
             conflicts: List of conflicts affecting this pattern
+            table: Optional table metadata for LLM SQL generation
+            workload: Optional workload features for LLM SQL generation
 
         Returns:
             SchemaRecommendation if approved, None if rejected
+
+        Note:
+            If sql_generator was provided at initialization and table/workload are provided,
+            uses LLM to generate production-ready SQL. Otherwise uses placeholder SQL.
         """
         # Reject if tradeoff analysis recommends rejection
         if tradeoff_analysis.recommendation == "REJECT":
@@ -110,8 +126,8 @@ class RecommendationEngine:
         # Build rationale
         rationale = self._build_rationale(pattern, cost_estimate, tradeoff_analysis)
 
-        # Build implementation (placeholder SQL for now)
-        implementation = self._build_implementation(pattern, cost_estimate)
+        # Build implementation (uses LLM if available)
+        implementation = self._build_implementation(pattern, cost_estimate, table, workload)
 
         # Build tradeoffs
         tradeoffs = self._build_tradeoffs(pattern, cost_estimate, tradeoff_analysis, conflicts)
@@ -233,16 +249,39 @@ class RecommendationEngine:
             )
 
     def _build_implementation(
-        self, pattern: DetectedPattern, cost_estimate: CostEstimate
+        self,
+        pattern: DetectedPattern,
+        cost_estimate: CostEstimate,
+        table: Optional[TableMetadata],
+        workload: Optional[WorkloadFeatures],
     ) -> Implementation:
-        """Build implementation details (placeholder SQL for now)."""
-        # Pattern-specific implementation guidance
+        """Build implementation details.
+
+        Uses LLM SQL generator if available and table/workload provided,
+        otherwise generates placeholder SQL.
+        """
+        # Try LLM generation first if available
+        if self._sql_generator and table and workload:
+            try:
+                from src.recommendation.sql_generator import SQLGenerationError
+
+                generated = self._sql_generator.generate_sql(pattern, table, workload)
+                return Implementation(
+                    sql=generated.implementation_sql,
+                    rollback_plan=generated.rollback_sql,
+                    testing_approach=generated.testing_steps,
+                )
+            except SQLGenerationError:
+                # Fall back to placeholder if LLM fails
+                pass
+
+        # Pattern-specific placeholder implementation
         if pattern.pattern_type == "LOB_CLIFF":
             table_col = pattern.affected_objects[0]  # Format: "TABLE.COLUMN"
             if "." in table_col:
-                table, column = table_col.split(".", 1)
-                sql = f"-- Placeholder: Split {column} from {table}\n-- CREATE TABLE {table}_{column} ..."
-                rollback = f"-- Placeholder: Merge {column} back into {table}\n-- DROP TABLE {table}_{column};"
+                table_name, column = table_col.split(".", 1)
+                sql = f"-- Placeholder: Split {column} from {table_name}\n-- CREATE TABLE {table_name}_{column} ..."
+                rollback = f"-- Placeholder: Merge {column} back into {table_name}\n-- DROP TABLE {table_name}_{column};"
             else:
                 sql = "-- Placeholder: LOB optimization SQL"
                 rollback = "-- Placeholder: Rollback SQL"
@@ -258,15 +297,15 @@ class RecommendationEngine:
             testing = "1. Test in dev environment\n2. Compare query performance\n3. Validate data consistency"
 
         elif pattern.pattern_type == "DOCUMENT_CANDIDATE":
-            table = pattern.affected_objects[0]
-            sql = f"-- Placeholder: Convert {table} to JSON collection\n-- CREATE TABLE {table}_json ..."
-            rollback = f"-- Placeholder: Revert to relational\n-- DROP TABLE {table}_json;"
+            table_name = pattern.affected_objects[0]
+            sql = f"-- Placeholder: Convert {table_name} to JSON collection\n-- CREATE TABLE {table_name}_json ..."
+            rollback = f"-- Placeholder: Revert to relational\n-- DROP TABLE {table_name}_json;"
             testing = "1. Parallel run with both schemas\n2. Compare application performance\n3. Validate JSON structure"
 
         elif pattern.pattern_type == "DUALITY_VIEW_OPPORTUNITY":
-            table = pattern.affected_objects[0]
-            sql = f"-- Placeholder: Create Duality View for {table}\n-- CREATE JSON RELATIONAL DUALITY VIEW {table}_dv AS ..."
-            rollback = f"-- Placeholder: Drop Duality View\n-- DROP VIEW {table}_dv;"
+            table_name = pattern.affected_objects[0]
+            sql = f"-- Placeholder: Create Duality View for {table_name}\n-- CREATE JSON RELATIONAL DUALITY VIEW {table_name}_dv AS ..."
+            rollback = f"-- Placeholder: Drop Duality View\n-- DROP VIEW {table_name}_dv;"
             testing = "1. Create view in test\n2. Route 10% of traffic to view\n3. Monitor performance for both OLTP and Analytics"
 
         else:
