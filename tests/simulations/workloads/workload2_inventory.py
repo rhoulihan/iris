@@ -160,11 +160,12 @@ class InventoryWorkload:
     def _query_warehouse_stock(self):
         """Warehouse-specific lookup (10% of reads)."""
         # This triggers table scan - anti-pattern!
+        # Using JSON_VALUE to find items with specific warehouse
         self.cursor.execute(
             """
             SELECT item_id, inventory_doc
             FROM inventory_items
-            WHERE JSON_EXISTS(inventory_doc, '$.warehouses[?(@.warehouseId == "WH-001")]')
+            WHERE JSON_VALUE(inventory_doc, '$.warehouses[0].warehouseId') = 'WH-001'
             AND ROWNUM <= 10
             """
         )

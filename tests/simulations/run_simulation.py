@@ -96,8 +96,13 @@ class SimulationRunner:
 
         cursor = self.connection.cursor()
 
+        # Remove multi-line comments (/* */) from SQL
+        import re
+
+        schema_sql_cleaned = re.sub(r"/\*.*?\*/", "", schema_sql, flags=re.DOTALL)
+
         # Split on semicolons and process each statement
-        for statement in schema_sql.split(";"):
+        for statement in schema_sql_cleaned.split(";"):
             statement = statement.strip()
 
             # Skip empty statements
@@ -125,8 +130,9 @@ class SimulationRunner:
 
                 # ORA-00942: table or view does not exist (expected for DROP)
                 # ORA-02289: sequence does not exist (expected for DROP)
+                # ORA-00955: name is already used by an existing object (expected for re-runs)
                 # ORA-01408: column list already indexed (UNIQUE creates implicit index)
-                if error_code in (942, 2289, 1408):
+                if error_code in (942, 2289, 955, 1408):
                     logger.debug(f"Expected error: {e}")
                 else:
                     # Re-raise unexpected errors
