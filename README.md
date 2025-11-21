@@ -58,7 +58,7 @@ pytest tests/ -v
 ### Core Documentation
 - **[IRIS.md](docs/IRIS.md)** - Complete project specification and architecture
 - **[CLAUDE.md](docs/CLAUDE.md)** - Development persona and TDD standards
-- **[Phase 1 Plan](docs/PHASE_1_PLAN.md)** - Current implementation plan (Weeks 1-4)
+- **[Implementation Plan](docs/IMPLEMENTATION_PLAN.md)** - Comprehensive implementation roadmap and progress
 - **[Dev Environment Setup](docs/DEV_ENVIRONMENT_PLAN.md)** - Detailed setup guide
 
 ### Quick Links
