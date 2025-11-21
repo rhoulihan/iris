@@ -20,26 +20,103 @@ IRIS combines **local LLM analysis** (Qwen 2.5 Coder - 82% SQL accuracy) with **
 ## 🚀 Quick Start
 
 ### Prerequisites
-- WSL Ubuntu (or Linux)
-- Docker & Docker Compose
-- Python 3.10+
-- 10GB RAM, 50GB disk space
+- **Operating System**: Linux or macOS
+- **Docker**: 20.10+ with Docker Compose
+- **Python**: 3.10 or higher
+- **Hardware**: 10GB RAM minimum, 50GB disk space
+- **Network**: Internet connection for Docker image downloads
 
-### Start Development Environment
+### Complete Installation Guide
 
+#### Step 1: Clone Repository
+```bash
+git clone https://github.com/rhoulihan/iris.git
+cd iris
+```
+
+#### Step 2: Start Docker Services
 ```bash
 # Start all services (Oracle 26ai, MinIO, Redis, MLflow)
 ./scripts/start-dev.sh
 
-# Activate Python environment
+# Wait for Oracle database to be ready (takes 2-3 minutes on first start)
+# You'll see "DATABASE IS READY TO USE!" in the logs
+```
+
+This starts:
+- Oracle Database Free 26ai (with AWR enabled)
+- MinIO (S3-compatible object storage)
+- Redis (feature cache)
+- MLflow (experiment tracking)
+
+#### Step 3: Set Up Python Environment
+```bash
+# Create virtual environment
+python3 -m venv venv
+
+# Activate virtual environment
 source venv/bin/activate
 
-# Run tests
-pytest tests/ -v
-
-# Stop environment
-./scripts/stop-dev.sh
+# Upgrade pip and install dependencies
+pip install --upgrade pip setuptools wheel
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
 ```
+
+#### Step 4: Verify Installation
+```bash
+# Run unit tests to verify setup
+pytest tests/unit/ -v
+
+# Check database connectivity
+python -c "import oracledb; print('Oracle driver OK')"
+```
+
+#### Step 5: Grant AWR Permissions (Required for Pipeline)
+```bash
+# Connect to database as SYSDBA
+docker exec -it oracle-db sqlplus sys/IrisDev123!@FREEPDB1 as sysdba
+
+# Grant AWR permissions (paste these commands in sqlplus)
+GRANT SELECT ON SYS.V_$PARAMETER TO iris_user;
+GRANT SELECT ON DBA_HIST_SNAPSHOT TO iris_user;
+GRANT SELECT ON DBA_HIST_SQLSTAT TO iris_user;
+GRANT SELECT ON DBA_HIST_SQLTEXT TO iris_user;
+GRANT SELECT ON DBA_HIST_SQL_PLAN TO iris_user;
+GRANT EXECUTE ON DBMS_WORKLOAD_REPOSITORY TO iris_user;
+EXIT;
+```
+
+#### Step 6: Run End-to-End Pipeline Validation
+```bash
+# Run Workload 1 (E-Commerce simulation)
+python tests/simulations/run_simulation.py \
+  --workload 1 \
+  --duration 60 \
+  --scale small \
+  --connection-string "iris_user/IrisUser123!@localhost:1524/FREEPDB1"
+
+# Expected output:
+# - Schema created (4 tables)
+# - Data generated (1000 users, products, orders)
+# - Workload executed (95:5 read:write ratio)
+# - AWR snapshots created
+# - Pipeline analysis completed
+# - Recommendations generated
+
+# Run all integration tests
+pytest tests/integration/ -v
+
+# Run simulation tests (requires AWR)
+pytest tests/simulations/ -v -m integration
+```
+
+**Validation Success Criteria**:
+- ✅ All Docker containers running (`docker compose -f docker/docker-compose.dev.yml ps`)
+- ✅ Oracle database accessible on port 1524
+- ✅ Unit tests passing (445+ tests)
+- ✅ Integration tests passing
+- ✅ Simulation workload completes with recommendations
 
 ### Service Access
 
@@ -50,6 +127,16 @@ pytest tests/ -v
 | **MinIO Console** | http://localhost:9001 | `iris-admin / IrisMinIO123!` |
 | **MLflow UI** | http://localhost:5000 | - |
 | **Redis** | `localhost:6379` | - |
+
+### Stopping the Environment
+
+```bash
+# Stop all services
+./scripts/stop-dev.sh
+
+# Or stop and remove volumes (clean slate)
+docker compose -f docker/docker-compose.dev.yml down -v
+```
 
 ---
 
