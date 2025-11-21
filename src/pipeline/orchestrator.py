@@ -322,7 +322,9 @@ class PipelineOrchestrator:
                                 table_metadata = dict_to_table_metadata(table_dict)
                                 tables.append(table_metadata)
                             except Exception as e:
-                                logger.debug(f"Failed to convert table metadata: {e}")
+                                logger.warning(
+                                    f"Failed to convert table metadata for {table_dict.get('table_name', 'unknown')}: {e}"
+                                )
                                 continue
                     except Exception as e:
                         logger.warning(f"Failed to collect schema {schema}: {e}")

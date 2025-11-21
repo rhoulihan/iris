@@ -146,8 +146,9 @@ def dict_to_table_metadata(table_dict: Optional[Dict[str, Any]]) -> TableMetadat
     try:
         name = table_dict["table_name"]
         schema = table_dict["owner"]
-        num_rows = int(table_dict.get("num_rows", 0))
-        avg_row_len = int(table_dict.get("avg_row_len", 0))
+        # Handle None values from unanalyzed tables
+        num_rows = int(table_dict.get("num_rows") or 0)
+        avg_row_len = int(table_dict.get("avg_row_len") or 0)
 
         # Handle compression - can be "ENABLED", "DISABLED", None, etc.
         compression_val = table_dict.get("compression")
