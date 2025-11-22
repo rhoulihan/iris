@@ -150,6 +150,11 @@ docker compose -f docker/docker-compose.dev.yml down -v
 
 ## 📚 Documentation
 
+### User Documentation
+- **[User Guide](docs/USER_GUIDE.md)** - Complete CLI and API usage guide with examples
+- **[Quick Reference](docs/QUICK_REFERENCE.md)** - Fast lookup for commands and workflows
+- **[API Design](docs/API_CLI_DESIGN.md)** - API and CLI specifications
+
 ### Core Documentation
 - **[IRIS.md](docs/IRIS.md)** - Complete project specification and architecture
 - **[CLAUDE.md](docs/CLAUDE.md)** - Development persona and TDD standards
