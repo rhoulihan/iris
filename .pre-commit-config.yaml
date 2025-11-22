@@ -70,7 +70,7 @@ repos:
     hooks:
       - id: prettier-frontend
         name: prettier (frontend)
-        entry: bash -c 'cd /mnt/c/Users/rickh/OneDrive/Documents/GitHub/iris/frontend && npm run format'
+        entry: bash -c 'cd frontend && npm run format'
         language: system
         files: ^frontend/.*\.(js|ts|svelte|json|css|html)$
         exclude: ^frontend/(dist|build|\.svelte-kit|node_modules)/
@@ -81,7 +81,7 @@ repos:
     hooks:
       - id: eslint-frontend
         name: eslint (frontend)
-        entry: bash -c 'cd /mnt/c/Users/rickh/OneDrive/Documents/GitHub/iris/frontend && npm run lint:fix'
+        entry: bash -c 'cd frontend && npm run lint:fix'
         language: system
         files: ^frontend/.*\.(js|ts|svelte)$
         exclude: ^frontend/(dist|build|\.svelte-kit|node_modules)/
@@ -92,7 +92,7 @@ repos:
     hooks:
       - id: svelte-check
         name: svelte-check
-        entry: bash -c 'cd /mnt/c/Users/rickh/OneDrive/Documents/GitHub/iris/frontend && npm run check'
+        entry: bash -c 'cd frontend && npm run check'
         language: system
         files: ^frontend/.*\.svelte$
         pass_filenames: false
@@ -102,7 +102,7 @@ repos:
     hooks:
       - id: npm-audit
         name: npm audit (security vulnerabilities)
-        entry: bash -c 'cd /mnt/c/Users/rickh/OneDrive/Documents/GitHub/iris/frontend && npm audit --audit-level=high'
+        entry: bash -c 'cd frontend && npm audit --audit-level=high'
         language: system
         files: ^frontend/(package\.json|package-lock\.json)$
         pass_filenames: false
