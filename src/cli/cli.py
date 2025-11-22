@@ -4,6 +4,7 @@ import json
 
 import click
 
+from src.cli.commands import analyze, explain, recommendations
 from src.cli.version import get_version, get_version_info
 
 
@@ -48,6 +49,12 @@ def version(verbose: bool, format: str) -> None:
     else:
         # Simple version output
         click.echo(f"IRIS v{get_version()}")
+
+
+# Add commands
+cli.add_command(analyze)
+cli.add_command(recommendations)
+cli.add_command(explain)
 
 
 if __name__ == "__main__":
