@@ -659,6 +659,14 @@ analysis:
     - DUALITY_VIEW
   create_snapshot: true  # Create new AWR snapshot
 
+  # Pattern detection volume thresholds (prevents false positives on small workloads)
+  pattern_detector:
+    min_total_queries: 5000           # Minimum queries in workload for reliable detection
+    min_pattern_query_count: 50       # Minimum queries matching a pattern
+    min_table_query_count: 20         # Minimum queries per table
+    low_volume_confidence_penalty: 0.3  # Confidence reduction (0.0-1.0) for low-volume patterns
+    snapshot_confidence_min_hours: 24.0 # Snapshot duration for full confidence (shorter = penalty)
+
 # Output configuration
 output:
   format: json           # Output format (json, yaml, text, csv)

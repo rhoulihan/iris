@@ -169,6 +169,12 @@ analysis:
     - DOCUMENT_RELATIONAL
     - DUALITY_VIEW
   create_snapshot: true
+  pattern_detector:
+    min_total_queries: 5000
+    min_pattern_query_count: 50
+    min_table_query_count: 20
+    low_volume_confidence_penalty: 0.3
+    snapshot_confidence_min_hours: 24.0
 
 output:
   format: json
@@ -361,4 +367,4 @@ export PYTHONPATH=$PWD
 
 ---
 
-**Last Updated:** 2025-11-21
+**Last Updated:** 2025-11-22

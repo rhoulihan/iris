@@ -631,14 +631,18 @@ The LLM will receive rich context for sophisticated analysis:
     - Feature versioning and lineage tracking
 
 ### Medium-term
-12. RL Optimizer (DS-DDPG) implementation
+12. ✅ Enhanced pattern detection sensitivity (COMPLETE)
+    - ✅ Volume-based sensitivity controls (min 5000 queries for reliable detection)
+    - ✅ Confidence penalty approach (30% reduction vs suppression) for low-volume patterns
+    - ✅ Snapshot confidence factor (penalizes monitoring windows < 24 hours)
+    - ✅ Absolute count validation (prevents percentage-only false positives)
+    - ✅ All 4 pattern detectors updated (LOB Cliff, Join Dimension, Document Relational, Duality View)
+    - ✅ 166/166 recommendation tests passing (100% pass rate)
+    - ⏳ Add LOB cliff detection scenarios to simulation framework (Enhancement 2 - pending)
+13. RL Optimizer (DS-DDPG) implementation
     - Double-State Deep Deterministic Policy Gradient
     - Experience replay buffer with production samples
     - Safe exploration with rollback capability
-13. Enhanced pattern detection sensitivity
-    - Tune thresholds for small workloads
-    - Add LOB cliff detection scenarios to simulation framework
-    - Improve pattern confidence scoring
 
 ### Long-term
 14. Production deployment and monitoring

@@ -456,15 +456,21 @@ pytest tests/ --cov=src --cov-report=html
     - ✅ Health check, analyze, sessions, recommendations endpoints
 
 **Optional Enhancements**:
-- Enhancing pattern detection sensitivity for small workloads
-- Adding more simulation scenarios (LOB cliff detection specific workload)
+- ✅ **Enhancement 1: Pattern Detection Sensitivity for Small Workloads** (Complete)
+  - Volume-based sensitivity controls (min 5000 queries for reliable detection)
+  - Confidence penalty approach (30% reduction vs suppression) for low-volume patterns
+  - Snapshot confidence factor (penalizes monitoring windows < 24 hours)
+  - Absolute count validation (prevents percentage-only false positives)
+  - All 4 pattern detectors updated (LOB Cliff, Join Dimension, Document Relational, Duality View)
+  - **166/166 recommendation tests passing (100% pass rate)**
+- ⏳ Enhancement 2: Additional simulation scenarios (LOB cliff detection specific workload)
 
 **Future Phases**:
 - ⏳ Feature store implementation (Feast + TimesTen)
 - ⏳ RL Optimizer (DS-DDPG) implementation
 
 **Test Coverage**: **88.22%** (Overall) | Data Converters 94.12% | Pattern Detector 95.68% | Cost Calculator 80.92% | Tradeoff Analyzer 100% | Recommendation Engine 92.41% | SQL Generator 98.77% | Cache Interface 89.06%
-**Total Tests**: **445 passing** (51 unit cache/storage + 27 ROI + 60 pattern detection + 22 tradeoff + 18 recommendation + 12 SQL generation + 14 data converters + 24 pipeline orchestrator + other modules)
+**Total Tests**: **445 passing** (51 unit cache/storage + 27 ROI + 166 recommendation (60 pattern detection + 22 tradeoff + 18 core + 12 SQL generation + 24 cost models + 30 other) + 14 data converters + 24 pipeline orchestrator + other modules)
 **Timeline**: 20 weeks to production (target: May 2026)
 
 ---
@@ -571,4 +577,4 @@ isort src/ tests/
 
 **Built with ❤️ using Test-Driven Development and Claude Code**
 
-Last Updated: 2025-11-21
+Last Updated: 2025-11-22
