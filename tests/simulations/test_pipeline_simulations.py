@@ -19,6 +19,7 @@ from tests.simulations.workloads.workload3_orders import OrdersWorkload
 logger = logging.getLogger(__name__)
 
 
+@pytest.mark.oracle
 class TestWorkload1ECommerce:
     """Test Workload 1: E-Commerce (Relational → Document recommendation)."""
 
@@ -81,6 +82,7 @@ class TestWorkload1ECommerce:
         pytest.skip("Pending pipeline orchestrator integration")
 
 
+@pytest.mark.oracle
 class TestWorkload2Inventory:
     """Test Workload 2: Inventory (Document → Relational recommendation)."""
 
@@ -133,6 +135,7 @@ class TestWorkload2Inventory:
         pytest.skip("Pending pipeline orchestrator integration")
 
 
+@pytest.mark.oracle
 class TestWorkload3Orders:
     """Test Workload 3: Orders (Hybrid → Duality View recommendation)."""
 
@@ -184,6 +187,7 @@ class TestWorkload3Orders:
         pytest.skip("Pending pipeline orchestrator integration")
 
 
+@pytest.mark.oracle
 @pytest.mark.integration
 class TestEndToEndPipeline:
     """End-to-end integration tests for complete pipeline execution."""
