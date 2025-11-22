@@ -220,7 +220,7 @@ class TestDocumentCandidateDetection:
                     query_id="select_all",
                     sql_text="SELECT * FROM user_profiles WHERE user_id = :id",
                     query_type="SELECT",
-                    executions=3000,
+                    executions=3250,  # Mixed document-style access
                     avg_elapsed_time_ms=5.0,
                     tables=["USER_PROFILES"],
                     join_count=0,
@@ -229,13 +229,13 @@ class TestDocumentCandidateDetection:
                     query_id="aggregate",
                     sql_text="SELECT COUNT(*) FROM user_profiles GROUP BY username",
                     query_type="SELECT",
-                    executions=3000,
+                    executions=3250,  # Mixed relational-style access
                     avg_elapsed_time_ms=20.0,
                     tables=["USER_PROFILES"],
                     join_count=0,
                 ),
             ],
-            total_executions=6000,
+            total_executions=6500,
             unique_patterns=2,
         )
 
@@ -334,13 +334,13 @@ class TestDocumentScoring:
                     query_id="select",
                     sql_text="SELECT * FROM flexible_data WHERE id = :id",
                     query_type="SELECT",
-                    executions=5000,
+                    executions=5500,  # Document-style full object access
                     avg_elapsed_time_ms=5.0,
                     tables=["FLEXIBLE_DATA"],
                     join_count=0,
                 ),
             ],
-            total_executions=5000,
+            total_executions=5500,
             unique_patterns=1,
         )
 
@@ -526,13 +526,13 @@ class TestClassifierEdgeCases:
                     query_id="other",
                     sql_text="SELECT * FROM other_table WHERE id = :id",
                     query_type="SELECT",
-                    executions=5000,
+                    executions=5500,  # Workload on different table
                     avg_elapsed_time_ms=5.0,
                     tables=["OTHER_TABLE"],
                     join_count=0,
                 ),
             ],
-            total_executions=5000,
+            total_executions=5500,
             unique_patterns=1,
         )
 

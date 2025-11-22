@@ -51,7 +51,7 @@ def frequent_update_queries():
                 query_id="update_001",
                 sql_text="UPDATE ORDERS SET ORDER_DATA = :data WHERE ORDER_ID = :id",
                 query_type="UPDATE",
-                executions=500,
+                executions=3000,  # 3000 updates to LOB column
                 avg_elapsed_time_ms=15.0,
                 tables=["ORDERS"],
                 join_count=0,
@@ -60,22 +60,32 @@ def frequent_update_queries():
                 query_id="update_002",
                 sql_text="UPDATE ORDERS SET STATUS = :status WHERE ORDER_ID = :id",
                 query_type="UPDATE",
-                executions=200,
+                executions=1500,  # 1500 non-LOB updates
                 avg_elapsed_time_ms=5.0,
                 tables=["ORDERS"],
                 join_count=0,
             ),
+            QueryPattern(
+                query_id="select_001",
+                sql_text="SELECT ORDER_ID, ORDER_DATA, STATUS FROM ORDERS WHERE ORDER_ID = :id",
+                query_type="SELECT",
+                executions=1000,  # 1000 reads
+                avg_elapsed_time_ms=3.0,
+                tables=["ORDERS"],
+                join_count=0,
+            ),
         ],
-        total_executions=700,
-        unique_patterns=2,
+        total_executions=5500,  # Above 5000 threshold
+        unique_patterns=3,
     )
 
 
 @pytest.fixture
 def infrequent_update_queries():
-    """Provide workload with infrequent updates.
+    """Provide workload with infrequent updates but sufficient total volume.
 
-    2 executions in 1-hour snapshot = 48 updates/day (below 100/day threshold)
+    2 LOB updates in 1-hour snapshot = 48 updates/day (below 100/day threshold)
+    But total workload has 5500 queries to pass volume check.
     """
     return WorkloadFeatures(
         queries=[
@@ -88,9 +98,18 @@ def infrequent_update_queries():
                 tables=["DOCUMENTS"],
                 join_count=0,
             ),
+            QueryPattern(
+                query_id="select_many",
+                sql_text="SELECT DOC_ID, CONTENT FROM DOCUMENTS WHERE DOC_ID = :id",
+                query_type="SELECT",
+                executions=5498,  # Many reads to reach 5500 total
+                avg_elapsed_time_ms=5.0,
+                tables=["DOCUMENTS"],
+                join_count=0,
+            ),
         ],
-        total_executions=2,
-        unique_patterns=1,
+        total_executions=5500,
+        unique_patterns=2,
     )
 
 
@@ -136,7 +155,10 @@ class TestLOBCliffDetection:
         from src.recommendation.pattern_detector import LOBCliffDetector
 
         detector = LOBCliffDetector()
-        patterns = detector.detect([table_with_large_json_column], frequent_update_queries)
+        # Use 24-hour snapshot for full confidence (no snapshot penalty)
+        patterns = detector.detect(
+            [table_with_large_json_column], frequent_update_queries, snapshot_duration_hours=24.0
+        )
 
         assert len(patterns) == 1
         pattern = patterns[0]
@@ -162,7 +184,9 @@ class TestLOBCliffDetection:
         )
 
         detector = LOBCliffDetector()
-        patterns = detector.detect([small_table], frequent_update_queries)
+        patterns = detector.detect(
+            [small_table], frequent_update_queries, snapshot_duration_hours=24.0
+        )
 
         assert len(patterns) == 0
 
@@ -174,7 +198,9 @@ class TestLOBCliffDetection:
         from src.recommendation.pattern_detector import LOBCliffDetector
 
         detector = LOBCliffDetector()
-        patterns = detector.detect([table_with_clob_column], infrequent_update_queries)
+        patterns = detector.detect(
+            [table_with_clob_column], infrequent_update_queries, snapshot_duration_hours=24.0
+        )
 
         assert len(patterns) == 0
 
@@ -196,7 +222,9 @@ class TestLOBCliffDetection:
         )
 
         detector = LOBCliffDetector()
-        patterns = detector.detect([non_lob_table], frequent_update_queries)
+        patterns = detector.detect(
+            [non_lob_table], frequent_update_queries, snapshot_duration_hours=24.0
+        )
 
         assert len(patterns) == 0
 
@@ -212,18 +240,29 @@ class TestLOBCliffDetection:
                     query_id="update_high",
                     sql_text="UPDATE ORDERS SET ORDER_DATA = :data WHERE ORDER_ID = :id",
                     query_type="UPDATE",
-                    executions=1000,
+                    executions=1000,  # Frequent LOB updates
                     avg_elapsed_time_ms=15.0,
                     tables=["ORDERS"],
                     join_count=0,
                 ),
+                QueryPattern(
+                    query_id="select_background",
+                    sql_text="SELECT ORDER_ID, ORDER_DATA FROM ORDERS WHERE ORDER_ID = :id",
+                    query_type="SELECT",
+                    executions=4500,  # Background reads to reach 5500 total
+                    avg_elapsed_time_ms=3.0,
+                    tables=["ORDERS"],
+                    join_count=0,
+                ),
             ],
-            total_executions=1000,
-            unique_patterns=1,
+            total_executions=5500,
+            unique_patterns=2,
         )
 
         detector = LOBCliffDetector()
-        patterns = detector.detect([table_with_large_json_column], high_frequency)
+        patterns = detector.detect(
+            [table_with_large_json_column], high_frequency, snapshot_duration_hours=24.0
+        )
 
         assert len(patterns) == 1
         assert patterns[0].severity == "HIGH"
@@ -242,18 +281,29 @@ class TestLOBCliffDetection:
                     query_id="update_mod",
                     sql_text="UPDATE ORDERS SET ORDER_DATA = :data WHERE ORDER_ID = :id",
                     query_type="UPDATE",
-                    executions=150,
+                    executions=150,  # Moderate LOB updates
                     avg_elapsed_time_ms=25.0,  # Slower query -> higher selectivity
                     tables=["ORDERS"],
                     join_count=0,
                 ),
+                QueryPattern(
+                    query_id="select_background",
+                    sql_text="SELECT ORDER_ID, STATUS FROM ORDERS WHERE ORDER_ID = :id",
+                    query_type="SELECT",
+                    executions=5350,  # Background reads to reach 5500 total
+                    avg_elapsed_time_ms=2.0,
+                    tables=["ORDERS"],
+                    join_count=0,
+                ),
             ],
-            total_executions=150,
-            unique_patterns=1,
+            total_executions=5500,
+            unique_patterns=2,
         )
 
         detector = LOBCliffDetector()
-        patterns = detector.detect([table_with_large_json_column], moderate_frequency)
+        patterns = detector.detect(
+            [table_with_large_json_column], moderate_frequency, snapshot_duration_hours=24.0
+        )
 
         assert len(patterns) == 1
         assert patterns[0].severity == "MEDIUM"
@@ -271,7 +321,9 @@ class TestLOBCliffMetrics:
         from src.recommendation.pattern_detector import LOBCliffDetector
 
         detector = LOBCliffDetector()
-        patterns = detector.detect([table_with_large_json_column], frequent_update_queries)
+        patterns = detector.detect(
+            [table_with_large_json_column], frequent_update_queries, snapshot_duration_hours=24.0
+        )
 
         assert len(patterns) == 1
         metrics = patterns[0].metrics
@@ -308,17 +360,25 @@ class TestLOBCliffMetrics:
                     query_id="upd",
                     sql_text="UPDATE LARGE_DOCS SET DATA = :d WHERE ID = :id",
                     query_type="UPDATE",
-                    executions=200,
+                    executions=200,  # LOB updates
                     avg_elapsed_time_ms=10.0,
                     tables=["LARGE_DOCS"],
                 ),
+                QueryPattern(
+                    query_id="sel",
+                    sql_text="SELECT ID, DATA FROM LARGE_DOCS WHERE ID = :id",
+                    query_type="SELECT",
+                    executions=5300,  # Background reads to reach 5500 total
+                    avg_elapsed_time_ms=5.0,
+                    tables=["LARGE_DOCS"],
+                ),
             ],
-            total_executions=200,
-            unique_patterns=1,
+            total_executions=5500,
+            unique_patterns=2,
         )
 
         detector = LOBCliffDetector()
-        patterns = detector.detect([large_table], workload)
+        patterns = detector.detect([large_table], workload, snapshot_duration_hours=24.0)
 
         assert len(patterns) == 1
         assert patterns[0].metrics["storage_type"] == "out_of_line"
@@ -356,7 +416,7 @@ class TestLOBCliffMetrics:
                     query_id="upd1",
                     sql_text="UPDATE JSON_TABLE SET DATA = :d WHERE ID = :id",
                     query_type="UPDATE",
-                    executions=200,
+                    executions=200,  # JSON LOB updates
                     avg_elapsed_time_ms=10.0,
                     tables=["JSON_TABLE"],
                 ),
@@ -364,17 +424,33 @@ class TestLOBCliffMetrics:
                     query_id="upd2",
                     sql_text="UPDATE CLOB_TABLE SET DATA = :d WHERE ID = :id",
                     query_type="UPDATE",
-                    executions=200,
+                    executions=200,  # CLOB updates
                     avg_elapsed_time_ms=10.0,
                     tables=["CLOB_TABLE"],
                 ),
+                QueryPattern(
+                    query_id="sel1",
+                    sql_text="SELECT ID, DATA FROM JSON_TABLE WHERE ID = :id",
+                    query_type="SELECT",
+                    executions=2550,  # Background reads
+                    avg_elapsed_time_ms=5.0,
+                    tables=["JSON_TABLE"],
+                ),
+                QueryPattern(
+                    query_id="sel2",
+                    sql_text="SELECT ID, DATA FROM CLOB_TABLE WHERE ID = :id",
+                    query_type="SELECT",
+                    executions=2550,  # Background reads
+                    avg_elapsed_time_ms=5.0,
+                    tables=["CLOB_TABLE"],
+                ),
             ],
-            total_executions=400,
-            unique_patterns=2,
+            total_executions=5500,
+            unique_patterns=4,
         )
 
         detector = LOBCliffDetector()
-        patterns = detector.detect([json_table, clob_table], workload)
+        patterns = detector.detect([json_table, clob_table], workload, snapshot_duration_hours=24.0)
 
         assert len(patterns) == 2
 
@@ -396,7 +472,9 @@ class TestLOBCliffRecommendations:
         from src.recommendation.pattern_detector import LOBCliffDetector
 
         detector = LOBCliffDetector()
-        patterns = detector.detect([table_with_large_json_column], frequent_update_queries)
+        patterns = detector.detect(
+            [table_with_large_json_column], frequent_update_queries, snapshot_duration_hours=24.0
+        )
 
         assert len(patterns) == 1
         assert patterns[0].recommendation_hint
@@ -410,7 +488,9 @@ class TestLOBCliffRecommendations:
         from src.recommendation.pattern_detector import LOBCliffDetector
 
         detector = LOBCliffDetector()
-        patterns = detector.detect([table_with_large_json_column], frequent_update_queries)
+        patterns = detector.detect(
+            [table_with_large_json_column], frequent_update_queries, snapshot_duration_hours=24.0
+        )
 
         assert len(patterns) == 1
         hint = patterns[0].recommendation_hint.lower()
@@ -441,7 +521,9 @@ class TestLOBCliffEdgeCases:
         empty_workload = WorkloadFeatures(queries=[], total_executions=0, unique_patterns=0)
 
         detector = LOBCliffDetector()
-        patterns = detector.detect([table_with_large_json_column], empty_workload)
+        patterns = detector.detect(
+            [table_with_large_json_column], empty_workload, snapshot_duration_hours=24.0
+        )
 
         assert len(patterns) == 0
 
@@ -468,7 +550,7 @@ class TestLOBCliffEdgeCases:
                     query_id="upd1",
                     sql_text="UPDATE COMPLEX_TABLE SET DATA1 = :d WHERE ID = :id",
                     query_type="UPDATE",
-                    executions=200,
+                    executions=200,  # JSON LOB updates
                     avg_elapsed_time_ms=10.0,
                     tables=["COMPLEX_TABLE"],
                 ),
@@ -476,17 +558,25 @@ class TestLOBCliffEdgeCases:
                     query_id="upd2",
                     sql_text="UPDATE COMPLEX_TABLE SET DATA2 = :d WHERE ID = :id",
                     query_type="UPDATE",
-                    executions=150,
+                    executions=150,  # CLOB updates
                     avg_elapsed_time_ms=12.0,
                     tables=["COMPLEX_TABLE"],
                 ),
+                QueryPattern(
+                    query_id="sel",
+                    sql_text="SELECT ID, DATA1, DATA2 FROM COMPLEX_TABLE WHERE ID = :id",
+                    query_type="SELECT",
+                    executions=5150,  # Background reads to reach 5500 total
+                    avg_elapsed_time_ms=8.0,
+                    tables=["COMPLEX_TABLE"],
+                ),
             ],
-            total_executions=350,
-            unique_patterns=2,
+            total_executions=5500,
+            unique_patterns=3,
         )
 
         detector = LOBCliffDetector()
-        patterns = detector.detect([multi_lob_table], workload)
+        patterns = detector.detect([multi_lob_table], workload, snapshot_duration_hours=24.0)
 
         assert len(patterns) == 2
         assert (
@@ -504,7 +594,9 @@ class TestLOBCliffEdgeCases:
         from src.recommendation.pattern_detector import LOBCliffDetector
 
         detector = LOBCliffDetector()
-        patterns = detector.detect([table_with_large_json_column], frequent_update_queries)
+        patterns = detector.detect(
+            [table_with_large_json_column], frequent_update_queries, snapshot_duration_hours=24.0
+        )
 
         pattern_ids = [p.pattern_id for p in patterns]
         assert len(pattern_ids) == len(set(pattern_ids))  # All unique

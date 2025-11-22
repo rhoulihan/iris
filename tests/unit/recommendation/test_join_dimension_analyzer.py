@@ -255,7 +255,7 @@ class TestJoinDimensionDetection:
                     query_id="join_large",
                     sql_text="SELECT o.*, p.product_name FROM orders o JOIN products p ON o.product_id = p.product_id",
                     query_type="SELECT",
-                    executions=2000,
+                    executions=2000,  # Joins to large dimension
                     avg_elapsed_time_ms=50.0,
                     tables=["ORDERS", "PRODUCTS"],
                     join_count=1,
@@ -273,14 +273,23 @@ class TestJoinDimensionDetection:
                     query_id="update_products",
                     sql_text="UPDATE products SET product_name = :name WHERE product_id = :id",
                     query_type="UPDATE",
-                    executions=500,
+                    executions=500,  # Frequent dimension updates
                     avg_elapsed_time_ms=10.0,
                     tables=["PRODUCTS"],
                     join_count=0,
                 ),
+                QueryPattern(
+                    query_id="select_orders",
+                    sql_text="SELECT * FROM orders WHERE order_id = :id",
+                    query_type="SELECT",
+                    executions=3000,  # Background reads to reach 5500 total
+                    avg_elapsed_time_ms=5.0,
+                    tables=["ORDERS"],
+                    join_count=0,
+                ),
             ],
-            total_executions=2500,
-            unique_patterns=2,
+            total_executions=5500,
+            unique_patterns=3,
         )
 
         schema = SchemaMetadata(
@@ -308,7 +317,7 @@ class TestJoinDimensionDetection:
                     query_id="join_all",
                     sql_text="SELECT o.*, c.* FROM orders o JOIN customers c ON o.customer_id = c.customer_id",
                     query_type="SELECT",
-                    executions=2000,
+                    executions=2000,  # Join fetching too many columns
                     avg_elapsed_time_ms=30.0,
                     tables=["ORDERS", "CUSTOMERS"],
                     join_count=1,
@@ -328,9 +337,18 @@ class TestJoinDimensionDetection:
                         )
                     ],
                 ),
+                QueryPattern(
+                    query_id="select_orders",
+                    sql_text="SELECT * FROM orders WHERE order_id = :id",
+                    query_type="SELECT",
+                    executions=3500,  # Background reads to reach 5500 total
+                    avg_elapsed_time_ms=5.0,
+                    tables=["ORDERS"],
+                    join_count=0,
+                ),
             ],
-            total_executions=2000,
-            unique_patterns=1,
+            total_executions=5500,
+            unique_patterns=2,
         )
 
         schema = SchemaMetadata(
