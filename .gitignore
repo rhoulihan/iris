@@ -58,6 +58,9 @@ models/*.safetensors
 *.log
 logs/
 
+# Pip artifacts
+=*
+
 # Docker volumes
 docker/volumes/
 
