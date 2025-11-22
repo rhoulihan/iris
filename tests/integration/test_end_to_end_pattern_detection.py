@@ -286,7 +286,8 @@ class TestEndToEndPatternDetection:
             small_update_selectivity_threshold=0.1,
         )
 
-        patterns = detector.detect(schema_config.tables, workload)
+        # Use 24-hour snapshot for full confidence (no snapshot penalty)
+        patterns = detector.detect(schema_config.tables, workload, snapshot_duration_hours=24.0)
 
         # Assertions
         assert len(patterns) > 0, "Should detect LOB cliff pattern"
