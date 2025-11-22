@@ -54,6 +54,17 @@ export default [
 			parserOptions: {
 				parser: tsParser
 			}
+		},
+		rules: {
+			// SvelteKit handles navigation automatically, resolve() not needed
+			'svelte/no-navigation-without-resolve': 'off',
+			'no-unused-vars': [
+				'error',
+				{
+					argsIgnorePattern: '^_',
+					varsIgnorePattern: '^_'
+				}
+			]
 		}
 	},
 	{

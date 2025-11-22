@@ -473,11 +473,16 @@ pytest tests/ --cov=src --cov-report=html
     - ✅ Utility functions (formatters, validators, constants)
     - ✅ Vite configuration with API proxy and build optimization
     - ✅ Production build verified (0 errors, 0 warnings)
-  - **Sprint 1.2: Base UI Components** (⏳ Next)
-    - Root layout with Header, Sidebar, Footer
-    - Base UI components (Button, Card, Modal, Alert, Badge, Table)
-    - Theme switcher and notification system
-    - Routing setup
+  - **Sprint 1.2: Base UI Components** (✅ Complete)
+    - ✅ Root layout with Header, Sidebar, Footer
+    - ✅ Base UI components (Button, Card, Modal, Alert, Badge, Table, Input, Select, Checkbox, Loading, EmptyState, ThemeToggle)
+    - ✅ Theme switcher (light/dark/auto mode with localStorage)
+    - ✅ 15 reusable Svelte components created
+    - ✅ Production build verified (0 errors, 0 warnings)
+  - **Sprint 1.3: API Client & Auth** (⏳ Next)
+    - API client service implementation
+    - Authentication and login page
+    - Protected routes
 
 **Optional Enhancements**:
 - ✅ **Enhancement 1: Pattern Detection Sensitivity for Small Workloads** (Complete)

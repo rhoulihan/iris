@@ -1,52 +1,71 @@
 /**
- * Theme store
- * Manages dark/light theme state
+ * Theme store for managing light/dark/auto theme switching
  */
-
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
 
-type Theme = 'light' | 'dark';
+export type Theme = 'light' | 'dark' | 'auto';
 
-function createThemeStore() {
-	// Initialize from localStorage if in browser, otherwise default to light
-	const initialTheme: Theme = browser
-		? (localStorage.getItem('theme') as Theme) || 'light'
-		: 'light';
+const THEME_STORAGE_KEY = 'iris-theme';
 
-	const { subscribe, set } = writable<Theme>(initialTheme);
+// Initialize theme from localStorage or default to 'auto'
+function getInitialTheme(): Theme {
+	if (!browser) return 'auto';
 
-	return {
-		subscribe,
-		setTheme: (theme: Theme) => {
-			if (browser) {
-				localStorage.setItem('theme', theme);
-				document.documentElement.setAttribute('data-theme', theme);
-			}
-			set(theme);
-		},
-		toggle: () => {
-			let currentTheme: Theme = 'light';
-			const unsubscribe = subscribe((value) => {
-				currentTheme = value;
-			});
-			unsubscribe();
-
-			const newTheme: Theme = currentTheme === 'light' ? 'dark' : 'light';
-
-			if (browser) {
-				localStorage.setItem('theme', newTheme);
-				document.documentElement.setAttribute('data-theme', newTheme);
-			}
-			set(newTheme);
-		}
-	};
+	const stored = localStorage.getItem(THEME_STORAGE_KEY);
+	if (stored === 'light' || stored === 'dark' || stored === 'auto') {
+		return stored;
+	}
+	return 'auto';
 }
 
-export const themeStore = createThemeStore();
+// Create the theme store
+export const theme = writable<Theme>(getInitialTheme());
 
-// Initialize theme on page load
+// Subscribe to theme changes and update localStorage + DOM
+theme.subscribe((value) => {
+	if (!browser) return;
+
+	// Save to localStorage
+	localStorage.setItem(THEME_STORAGE_KEY, value);
+
+	// Determine the actual theme to apply
+	let actualTheme: 'light' | 'dark';
+	if (value === 'auto') {
+		// Use system preference
+		actualTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+	} else {
+		actualTheme = value;
+	}
+
+	// Apply theme to document
+	document.documentElement.setAttribute('data-theme', actualTheme);
+});
+
+// Listen for system theme changes when in auto mode
 if (browser) {
-	const theme = (localStorage.getItem('theme') as Theme) || 'light';
-	document.documentElement.setAttribute('data-theme', theme);
+	const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+	mediaQuery.addEventListener('change', (e) => {
+		theme.update((currentTheme) => {
+			if (currentTheme === 'auto') {
+				// Trigger a refresh by re-setting the theme
+				const actualTheme = e.matches ? 'dark' : 'light';
+				document.documentElement.setAttribute('data-theme', actualTheme);
+			}
+			return currentTheme;
+		});
+	});
+}
+
+// Export helper functions
+export function setTheme(newTheme: Theme) {
+	theme.set(newTheme);
+}
+
+export function toggleTheme() {
+	theme.update((current) => {
+		if (current === 'light') return 'dark';
+		if (current === 'dark') return 'auto';
+		return 'light';
+	});
 }
