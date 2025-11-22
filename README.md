@@ -478,6 +478,7 @@ pytest tests/ --cov=src --cov-report=html
     - ✅ Base UI components (Button, Card, Modal, Alert, Badge, Table, Input, Select, Checkbox, Loading, EmptyState, ThemeToggle)
     - ✅ Theme switcher (light/dark/auto mode with localStorage)
     - ✅ 15 reusable Svelte components created
+    - ✅ Component showcase page (/components route)
     - ✅ Production build verified (0 errors, 0 warnings)
   - **Sprint 1.3: API Client & Auth** (⏳ Next)
     - API client service implementation
