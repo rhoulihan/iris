@@ -11,10 +11,8 @@ export const PATTERN_TYPES = {
 
 export const PATTERN_DESCRIPTIONS = {
 	LOB_CLIFF: 'Large objects stored in external tablespaces for improved performance',
-	JOIN_DIMENSION:
-		'Denormalized dimension tables to reduce join overhead in analytical queries',
-	DOCUMENT_RELATIONAL:
-		'JSON/XML documents that could benefit from relational decomposition',
+	JOIN_DIMENSION: 'Denormalized dimension tables to reduce join overhead in analytical queries',
+	DOCUMENT_RELATIONAL: 'JSON/XML documents that could benefit from relational decomposition',
 	DUALITY_VIEW: 'Relational tables that could be accessed via JSON Relational Duality Views'
 } as const;
 

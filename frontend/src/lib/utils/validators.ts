@@ -20,8 +20,10 @@ export function isValidHostname(hostname: string): boolean {
 	if (hostname.length > 253) return false;
 
 	// Regex is safe: bounded quantifiers {0,61} prevent ReDoS
-	const hostnameRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-	// eslint-disable-next-line security/detect-unsafe-regex
+	const hostnameRegex =
+		// eslint-disable-next-line security/detect-unsafe-regex
+		/^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+
 	return hostnameRegex.test(hostname);
 }
 

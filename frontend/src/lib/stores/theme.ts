@@ -11,7 +11,7 @@ type Theme = 'light' | 'dark';
 function createThemeStore() {
 	// Initialize from localStorage if in browser, otherwise default to light
 	const initialTheme: Theme = browser
-		? ((localStorage.getItem('theme') as Theme) || 'light')
+		? (localStorage.getItem('theme') as Theme) || 'light'
 		: 'light';
 
 	const { subscribe, set } = writable<Theme>(initialTheme);

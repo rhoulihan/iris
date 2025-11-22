@@ -16,10 +16,7 @@ class APIError extends Error {
 	}
 }
 
-async function fetchAPI<T>(
-	endpoint: string,
-	options: RequestInit = {}
-): Promise<T> {
+async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
 	const url = `${API_BASE_URL}${endpoint}`;
 	const headers = {
 		'Content-Type': 'application/json',
