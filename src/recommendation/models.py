@@ -10,6 +10,46 @@ from typing import Any, Dict, List, Optional
 
 
 @dataclass
+class PatternDetectorConfig:
+    """Configuration for pattern detection with volume-based sensitivity controls.
+
+    Attributes:
+        min_total_queries: Minimum total queries in workload for reliable detection
+        min_pattern_query_count: Minimum queries matching a pattern for detection
+        min_table_query_count: Minimum queries per table for analysis
+        low_volume_confidence_penalty: Confidence reduction factor for low-volume patterns (0.0-1.0)
+        snapshot_confidence_min_hours: Snapshot duration for full confidence (shorter = penalty)
+    """
+
+    min_total_queries: int = 5000
+    min_pattern_query_count: int = 50
+    min_table_query_count: int = 20
+    low_volume_confidence_penalty: float = 0.3
+    snapshot_confidence_min_hours: float = 24.0
+
+    def __post_init__(self) -> None:
+        """Validate configuration values."""
+        if self.min_total_queries < 0:
+            raise ValueError(f"min_total_queries must be >= 0, got {self.min_total_queries}")
+        if self.min_pattern_query_count < 0:
+            raise ValueError(
+                f"min_pattern_query_count must be >= 0, got {self.min_pattern_query_count}"
+            )
+        if self.min_table_query_count < 0:
+            raise ValueError(
+                f"min_table_query_count must be >= 0, got {self.min_table_query_count}"
+            )
+        if not 0.0 <= self.low_volume_confidence_penalty <= 1.0:
+            raise ValueError(
+                f"low_volume_confidence_penalty must be 0.0-1.0, got {self.low_volume_confidence_penalty}"
+            )
+        if self.snapshot_confidence_min_hours <= 0:
+            raise ValueError(
+                f"snapshot_confidence_min_hours must be > 0, got {self.snapshot_confidence_min_hours}"
+            )
+
+
+@dataclass
 class DetectedPattern:
     """A detected anti-pattern or optimization opportunity.
 

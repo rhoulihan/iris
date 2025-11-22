@@ -6,11 +6,12 @@ LOB cliffs, expensive joins, document vs relational mismatches, and duality view
 
 import logging
 from collections import defaultdict
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from src.recommendation.models import (
     ColumnMetadata,
     DetectedPattern,
+    PatternDetectorConfig,
     QueryPattern,
     SchemaMetadata,
     TableMetadata,
@@ -42,6 +43,7 @@ class LOBCliffDetector:
         large_doc_threshold_bytes: int = 4096,
         high_update_frequency_threshold: int = 100,
         small_update_selectivity_threshold: float = 0.1,
+        config: Optional[PatternDetectorConfig] = None,
     ):
         """Initialize LOBCliffDetector with configurable thresholds.
 
@@ -49,16 +51,19 @@ class LOBCliffDetector:
             large_doc_threshold_bytes: Size threshold for out-of-line storage
             high_update_frequency_threshold: Minimum updates per day to trigger detection
             small_update_selectivity_threshold: Maximum selectivity for small updates
+            config: Volume-based sensitivity configuration (default: PatternDetectorConfig())
         """
         self.large_doc_threshold_bytes = large_doc_threshold_bytes
         self.high_update_frequency_threshold = high_update_frequency_threshold
         self.small_update_selectivity_threshold = small_update_selectivity_threshold
+        self.config = config if config is not None else PatternDetectorConfig()
 
         logger.info(
             f"LOBCliffDetector initialized with thresholds: "
             f"doc_size={large_doc_threshold_bytes}B, "
             f"update_freq={high_update_frequency_threshold}/day, "
-            f"selectivity={small_update_selectivity_threshold}"
+            f"selectivity={small_update_selectivity_threshold}, "
+            f"min_total_queries={self.config.min_total_queries}"
         )
 
     def detect(
@@ -78,6 +83,15 @@ class LOBCliffDetector:
         Returns:
             List of detected LOB cliff patterns
         """
+        # Check total workload volume for reliable detection
+        total_queries = sum(q.executions for q in workload.queries)
+        if total_queries < self.config.min_total_queries:
+            logger.info(
+                f"Skipping LOB cliff detection: workload volume ({total_queries} queries) "
+                f"below minimum threshold ({self.config.min_total_queries})"
+            )
+            return []
+
         patterns = []
 
         for table in tables:
@@ -151,8 +165,21 @@ class LOBCliffDetector:
         avg_doc_size = col.avg_size if col.avg_size else table.avg_row_len
         update_frequency_snapshot = sum(q.executions for q in update_queries)
 
+        # Check minimum update volume for reliable detection
+        if update_frequency_snapshot < self.config.min_pattern_query_count:
+            logger.debug(
+                f"Skipping {table.name}.{col.name}: update count ({update_frequency_snapshot}) "
+                f"below minimum ({self.config.min_pattern_query_count})"
+            )
+            return None
+
         # Scale to daily rate based on snapshot duration
         updates_per_day = (update_frequency_snapshot / snapshot_duration_hours) * 24
+
+        # Calculate snapshot confidence factor (penalize short snapshots)
+        snapshot_confidence = min(
+            1.0, snapshot_duration_hours / self.config.snapshot_confidence_min_hours
+        )
 
         update_selectivity = self._calculate_update_selectivity(update_queries, col)
 
@@ -163,9 +190,9 @@ class LOBCliffDetector:
         if avg_doc_size > self.large_doc_threshold_bytes:
             risk_score += 0.3
 
-        # Factor 2: High update frequency
+        # Factor 2: High update frequency (with snapshot confidence factor)
         if updates_per_day > self.high_update_frequency_threshold:
-            risk_score += 0.3
+            risk_score += 0.3 * snapshot_confidence
 
         # Factor 3: Small updates (low selectivity)
         if update_selectivity < self.small_update_selectivity_threshold:
@@ -174,6 +201,14 @@ class LOBCliffDetector:
         # Factor 4: Text JSON in CLOB (inefficient format)
         if col.data_type == "CLOB":
             risk_score += 0.2
+
+        # Apply confidence penalty for low absolute volume
+        if update_frequency_snapshot < (self.config.min_pattern_query_count * 2):
+            risk_score *= 1.0 - self.config.low_volume_confidence_penalty
+            logger.debug(
+                f"Applied {self.config.low_volume_confidence_penalty:.0%} confidence penalty "
+                f"for low volume ({update_frequency_snapshot} updates)"
+            )
 
         # Only create pattern if risk exceeds threshold
         if risk_score < 0.6:
@@ -303,6 +338,7 @@ class JoinDimensionAnalyzer:
         max_columns_fetched: int = 5,
         max_dimension_rows: int = 1000000,
         max_dimension_update_rate: int = 100,
+        config: Optional[PatternDetectorConfig] = None,
     ):
         """Initialize JoinDimensionAnalyzer with configurable thresholds.
 
@@ -311,18 +347,21 @@ class JoinDimensionAnalyzer:
             max_columns_fetched: Maximum columns to consider
             max_dimension_rows: Maximum dimension table size
             max_dimension_update_rate: Maximum updates per day to dimension
+            config: Volume-based sensitivity configuration (default: PatternDetectorConfig())
         """
         self.min_join_frequency_percentage = min_join_frequency_percentage
         self.max_columns_fetched = max_columns_fetched
         self.max_dimension_rows = max_dimension_rows
         self.max_dimension_update_rate = max_dimension_update_rate
+        self.config = config if config is not None else PatternDetectorConfig()
 
         logger.info(
             f"JoinDimensionAnalyzer initialized with thresholds: "
             f"min_freq={min_join_frequency_percentage}%, "
             f"max_cols={max_columns_fetched}, "
             f"max_rows={max_dimension_rows}, "
-            f"max_updates={max_dimension_update_rate}/day"
+            f"max_updates={max_dimension_update_rate}/day, "
+            f"min_total_queries={self.config.min_total_queries}"
         )
 
     def analyze(self, workload: WorkloadFeatures, schema: SchemaMetadata) -> List[DetectedPattern]:
@@ -335,20 +374,36 @@ class JoinDimensionAnalyzer:
         Returns:
             List of detected expensive join patterns
         """
+        # Check total workload volume for reliable detection
+        total_queries = workload.total_executions
+        if total_queries < self.config.min_total_queries:
+            logger.info(
+                f"Skipping join dimension analysis: workload volume ({total_queries} queries) "
+                f"below minimum threshold ({self.config.min_total_queries})"
+            )
+            return []
+
         patterns = []
 
         # Step 1: Build join frequency matrix
         join_patterns = self._build_join_frequency_matrix(workload)
 
         # Step 2: Analyze each frequent join
-        total_queries = workload.total_executions
-
         for join_key, metrics in join_patterns.items():
             # Parse join key
             left_table, right_table = join_key.split("__")
 
+            # Check absolute join count first
+            join_count = metrics["count"]
+            if join_count < self.config.min_pattern_query_count:
+                logger.debug(
+                    f"Skipping {join_key}: join count ({join_count}) "
+                    f"below minimum ({self.config.min_pattern_query_count})"
+                )
+                continue
+
             # Calculate join frequency percentage
-            join_frequency_pct = (metrics["count"] / total_queries) * 100
+            join_frequency_pct = (join_count / total_queries) * 100
 
             if join_frequency_pct < self.min_join_frequency_percentage:
                 continue  # Low frequency, skip
@@ -603,6 +658,7 @@ class DocumentRelationalClassifier:
         object_access_weight: float = 0.3,
         schema_flexibility_weight: float = 0.2,
         multi_column_update_weight: float = 0.1,
+        config: Optional[PatternDetectorConfig] = None,
     ):
         """Initialize DocumentRelationalClassifier with configurable weights.
 
@@ -612,15 +668,18 @@ class DocumentRelationalClassifier:
             object_access_weight: Weight for object access pattern
             schema_flexibility_weight: Weight for nullable columns
             multi_column_update_weight: Weight for multi-column updates
+            config: Volume-based sensitivity configuration (default: PatternDetectorConfig())
         """
         self.strong_signal_threshold = strong_signal_threshold
         self.select_all_weight = select_all_weight
         self.object_access_weight = object_access_weight
         self.schema_flexibility_weight = schema_flexibility_weight
         self.multi_column_update_weight = multi_column_update_weight
+        self.config = config if config is not None else PatternDetectorConfig()
 
         logger.info(
-            f"DocumentRelationalClassifier initialized with threshold={strong_signal_threshold}"
+            f"DocumentRelationalClassifier initialized with threshold={strong_signal_threshold}, "
+            f"min_total_queries={self.config.min_total_queries}"
         )
 
     def classify(
@@ -639,6 +698,15 @@ class DocumentRelationalClassifier:
         Returns:
             List of detected patterns
         """
+        # Check total workload volume for reliable detection
+        total_queries = workload.total_executions
+        if total_queries < self.config.min_total_queries:
+            logger.info(
+                f"Skipping document/relational classification: workload volume ({total_queries} queries) "
+                f"below minimum threshold ({self.config.min_total_queries})"
+            )
+            return []
+
         patterns = []
 
         for table in tables:
@@ -646,6 +714,15 @@ class DocumentRelationalClassifier:
             table_queries = self._get_table_queries(table, workload)
 
             if not table_queries:
+                continue
+
+            # Check minimum table query volume
+            table_query_count = sum(q.executions for q in table_queries)
+            if table_query_count < self.config.min_table_query_count:
+                logger.debug(
+                    f"Skipping {table.name}: query count ({table_query_count}) "
+                    f"below minimum ({self.config.min_table_query_count})"
+                )
                 continue
 
             # Calculate document score
@@ -931,6 +1008,7 @@ class DualityViewOpportunityFinder:
         min_oltp_percentage: float = 10.0,
         min_analytics_percentage: float = 10.0,
         duality_refresh_overhead_factor: float = 0.1,
+        config: Optional[PatternDetectorConfig] = None,
     ):
         """Initialize DualityViewOpportunityFinder with configurable thresholds.
 
@@ -938,10 +1016,12 @@ class DualityViewOpportunityFinder:
             min_oltp_percentage: Minimum OLTP percentage to trigger detection
             min_analytics_percentage: Minimum Analytics percentage to trigger detection
             duality_refresh_overhead_factor: Overhead factor for view refresh
+            config: Volume-based sensitivity configuration (default: PatternDetectorConfig())
         """
         self.min_oltp_percentage = min_oltp_percentage
         self.min_analytics_percentage = min_analytics_percentage
         self.duality_refresh_overhead_factor = duality_refresh_overhead_factor
+        self.config = config if config is not None else PatternDetectorConfig()
 
         logger.info(
             f"DualityViewOpportunityFinder initialized with thresholds: "
@@ -962,6 +1042,15 @@ class DualityViewOpportunityFinder:
         Returns:
             List of detected duality view opportunities
         """
+        # Check total workload volume for reliable detection
+        total_queries = workload.total_executions
+        if total_queries < self.config.min_total_queries:
+            logger.info(
+                f"Skipping duality view detection: workload volume ({total_queries} queries) "
+                f"below minimum threshold ({self.config.min_total_queries})"
+            )
+            return []
+
         patterns = []
 
         for table in tables:
@@ -978,6 +1067,21 @@ class DualityViewOpportunityFinder:
             total_executions = sum(q.executions for q in table_queries)
 
             if total_executions == 0:
+                continue
+
+            # Check minimum query counts (not just percentages)
+            if oltp_executions < self.config.min_pattern_query_count:
+                logger.debug(
+                    f"Skipping {table.name}: OLTP count ({oltp_executions}) "
+                    f"below minimum ({self.config.min_pattern_query_count})"
+                )
+                continue
+
+            if analytics_executions < self.config.min_pattern_query_count:
+                logger.debug(
+                    f"Skipping {table.name}: Analytics count ({analytics_executions}) "
+                    f"below minimum ({self.config.min_pattern_query_count})"
+                )
                 continue
 
             # Calculate percentages
