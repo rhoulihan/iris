@@ -455,12 +455,11 @@ pytest tests/ --cov=src --cov-report=html
     - ✅ Pydantic models for request/response validation
     - ✅ Health check, analyze, sessions, recommendations endpoints
 
-**In Progress**:
-- Documentation updates
+**Optional Enhancements**:
 - Enhancing pattern detection sensitivity for small workloads
 - Adding more simulation scenarios (LOB cliff detection specific workload)
 
-**Next Up**:
+**Future Phases**:
 - ⏳ Feature store implementation (Feast + TimesTen)
 - ⏳ RL Optimizer (DS-DDPG) implementation
 
