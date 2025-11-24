@@ -73,3 +73,6 @@ Thumbs.db
 # Jupyter
 .ipynb_checkpoints/
 notebooks/.ipynb_checkpoints/
+
+# Archived files
+archived_ui/

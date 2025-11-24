@@ -154,9 +154,6 @@ docker compose -f docker/docker-compose.dev.yml down -v
 - **[User Guide](docs/USER_GUIDE.md)** - Complete CLI and API usage guide with examples
 - **[Quick Reference](docs/QUICK_REFERENCE.md)** - Fast lookup for commands and workflows
 - **[API Design](docs/API_CLI_DESIGN.md)** - API and CLI specifications
-- **[Web Console Requirements](docs/WEB_CONSOLE_REQUIREMENTS.md)** - Web console feature specifications
-- **[Web Console Implementation Plan](docs/WEB_CONSOLE_IMPLEMENTATION_PLAN.md)** - 4-week implementation roadmap
-- **[Web Console Options Analysis](docs/WEB_CONSOLE_OPTIONS.md)** - Technology stack comparison and recommendations
 
 ### Core Documentation
 - **[IRIS.md](docs/IRIS.md)** - Complete project specification and architecture
@@ -457,33 +454,6 @@ pytest tests/ --cov=src --cov-report=html
     - ✅ FastAPI application with 6 endpoints (7/7 tests)
     - ✅ Pydantic models for request/response validation
     - ✅ Health check, analyze, sessions, recommendations endpoints
-
-- 🔄 **Web Console (Phase 6 - In Progress)**
-  - **Sprint 1.1: Project Initialization** (✅ Complete)
-    - ✅ Svelte 5 + SvelteKit project initialized with TypeScript
-    - ✅ Tailwind CSS v4 + DaisyUI v5 configured and working
-    - ✅ TypeScript strict mode enabled
-    - ✅ ESLint v9 (flat config) + Prettier configured with Svelte support
-    - ✅ Frontend pre-commit hooks (ESLint, Prettier, svelte-check, npm audit)
-    - ✅ Security scanning (eslint-plugin-security, npm audit for dependencies)
-    - ✅ Project structure created (components, services, stores, types, utils)
-    - ✅ API client service with typed endpoints
-    - ✅ Svelte stores (sessions, recommendations, config, theme)
-    - ✅ TypeScript types (analysis, recommendation, simulation, connection)
-    - ✅ Utility functions (formatters, validators, constants)
-    - ✅ Vite configuration with API proxy and build optimization
-    - ✅ Production build verified (0 errors, 0 warnings)
-  - **Sprint 1.2: Base UI Components** (✅ Complete)
-    - ✅ Root layout with Header, Sidebar, Footer
-    - ✅ Base UI components (Button, Card, Modal, Alert, Badge, Table, Input, Select, Checkbox, Loading, EmptyState, ThemeToggle)
-    - ✅ Theme switcher (light/dark/auto mode with localStorage)
-    - ✅ 15 reusable Svelte components created
-    - ✅ Component showcase page (/components route)
-    - ✅ Production build verified (0 errors, 0 warnings)
-  - **Sprint 1.3: API Client & Auth** (⏳ Next)
-    - API client service implementation
-    - Authentication and login page
-    - Protected routes
 
 **Optional Enhancements**:
 - ✅ **Enhancement 1: Pattern Detection Sensitivity for Small Workloads** (Complete)
